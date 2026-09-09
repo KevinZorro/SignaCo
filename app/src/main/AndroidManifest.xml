@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        RNF-06 a RNF-08 (privacidad): la app NO declara android.permission.INTERNET.
+        Todo el procesamiento es en el dispositivo y el progreso vive en almacenamiento local.
+        No agregar el permiso de INTERNET.
+
+        Cuando se porte el spike de camara habra que declarar android.permission.CAMERA
+        y <uses-feature android:name="android.hardware.camera" />. Todavia no aplica.
+    -->
 
     <application
+        android:name=".SignaCoApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
