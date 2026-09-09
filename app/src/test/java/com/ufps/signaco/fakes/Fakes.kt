@@ -14,6 +14,7 @@ import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 import com.ufps.signaco.feature.progreso.domain.model.Racha
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 /**
@@ -129,3 +130,20 @@ fun leccionDePrueba(
     orden = orden,
     senas = senas,
 )
+
+/** Repositorio que siempre falla, para probar el camino de error de los ViewModel. */
+class LeccionRepositoryQueFalla : LeccionRepository {
+    override fun observarLecciones(): Flow<List<Leccion>> =
+        flow { throw IllegalStateException("falla simulada") }
+
+    override fun observarLeccion(leccionId: String): Flow<Leccion?> =
+        flow { throw IllegalStateException("falla simulada") }
+}
+
+class SenaRepositoryQueFalla : SenaRepository {
+    override fun observarSenas(): Flow<List<Sena>> =
+        flow { throw IllegalStateException("falla simulada") }
+
+    override fun observarSena(senaId: String): Flow<Sena?> =
+        flow { throw IllegalStateException("falla simulada") }
+}

@@ -147,18 +147,43 @@ No es una capa de pintura al final:
 
 ## Pruebas
 
-Las pruebas viven en `app/src/test` y cubren la capa `domain`:
+```
+./gradlew testDebugUnitTest        # rápidas, en la JVM
+./gradlew connectedDebugAndroidTest # base de datos, necesita emulador o dispositivo
+```
 
-```
-./gradlew testDebugUnitTest
-```
+**En `app/src/test` (JVM, sin emulador):**
+
+- Casos de uso de `domain`: reglas de racha, criterio de "seña dominada", registro de
+  intentos, resumen de progreso, evaluación de intentos con clasificador falso, generación
+  y calificación de quiz, armado del catálogo con progreso y búsqueda en el diccionario.
+- Datos de precarga: que el catálogo tenga 27 letras sin repetir, que sus etiquetas sean las
+  que el modelo conoce, que cada seña practicable esté en exactamente una lección y que la
+  enie no esté en ninguna.
+- ViewModel: que publiquen el estado correcto y que un fallo del repositorio termine en
+  `hayError`, no en una carga infinita.
+
+**En `app/src/androidTest` (SQLite de verdad):** que la precarga corra al crear la base, que
+la relación lección-señas devuelva lo esperado, que registrar intentos acumule y que la
+racha y las lecciones completadas no se dupliquen.
 
 Los dobles están escritos a mano en `fakes/Fakes.kt`, sin librería de mocks: son pocas
 interfaces y así las pruebas se leen sin conocer una API extra.
 
-Lo cubierto: reglas de racha, criterio de "seña dominada", registro de intentos, resumen de
-progreso, evaluación de intentos con clasificador falso, generación y calificación de quiz,
-armado del catálogo con progreso y búsqueda en el diccionario.
+## Integración continua
+
+`.github/workflows/ci.yml` corre en cada push y en cada pull request:
+
+| Job | Qué hace |
+|---|---|
+| `verificacion` | `assembleDebug`, `testDebugUnitTest` y `lintDebug` |
+| `pruebas-instrumentadas` | las pruebas de base de datos en un emulador API 34 |
+
+`assembleDebug` es más que una compilación: Room valida cada `@Query` contra el esquema y
+Hilt valida el grafo completo de dependencias. Si una consulta tiene mal un nombre de columna
+o falta un `@Binds`, el job falla ahí.
+
+Los reportes de pruebas y de lint quedan como artefactos de cada ejecución.
 
 ## Estado
 
