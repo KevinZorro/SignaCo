@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     // Rutas de navegacion type-safe (@Serializable en core/navegacion/Rutas.kt)
     alias(libs.plugins.kotlin.serialization)
@@ -42,12 +41,6 @@ android {
         unitTests {
             isReturnDefaultValues = true
         }
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
 }
 
