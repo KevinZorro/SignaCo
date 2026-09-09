@@ -35,13 +35,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Compilar la app
-        run: ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug
 
       - name: Pruebas unitarias
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest
 
       - name: Analisis estatico (Android Lint)
-        run: ./gradlew lintDebug --stacktrace
+        run: ./gradlew lintDebug
 
       - name: Guardar reportes
         if: always()
@@ -90,7 +90,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: ./gradlew connectedDebugAndroidTest
 
       - name: Guardar reportes
         if: always()
