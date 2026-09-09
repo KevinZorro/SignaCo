@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # En ramas con pull request abierto basta con el evento pull_request: si además se
+  # escuchara cada push, cada commit dispararia dos veces el mismo trabajo.
   push:
-    branches: ['**']
+    branches: [master, main]
   pull_request:
   workflow_dispatch:
 
