@@ -170,6 +170,34 @@ racha y las lecciones completadas no se dupliquen.
 Los dobles están escritos a mano en `fakes/Fakes.kt`, sin librería de mocks: son pocas
 interfaces y así las pruebas se leen sin conocer una API extra.
 
+## El build: por qué está configurado así
+
+Esta configuración es poco habitual y cada pieza tiene un motivo. Antes de "arreglar"
+cualquiera de estas cosas, leer esto: todas salieron de fallos reales de CI.
+
+**No se aplica `org.jetbrains.kotlin.android`.** AGP 9 trae su propio Kotlin integrado.
+Si además se aplica el plugin de Kotlin, el build revienta al configurarse:
+
+```
+ClassCastException: ApplicationExtensionImpl cannot be cast to
+                    com.android.build.gradle.BaseExtension
+```
+
+Pasa igual con Kotlin 2.2.10 y con 2.4.20. Los plugins de compilador que sí se aplican
+(Compose, serialization) y KSP funcionan sobre el Kotlin integrado sin problema.
+
+**`android.disallowKotlinSourceSets=false` en gradle.properties.** KSP registra sus
+carpetas generadas por el DSL `kotlin.sourceSets`, que el Kotlin integrado rechaza por
+defecto. La bandera es la vía de escape que documenta el propio AGP. Se puede quitar
+cuando KSP pase a usar `android.sourceSets`.
+
+**Hilt 2.60.1 como mínimo.** Las versiones anteriores (2.57.x) fallan al aplicarse sobre
+AGP 9, en `HiltGradlePlugin.apply`.
+
+**Los iconos de Material llevan versión explícita (1.7.8).** El BOM de Compose ya no los
+gestiona y `material3` dejó de arrastrarlos, así que sin la dependencia explícita las
+pantallas no compilan (`Unresolved reference 'Icons'`).
+
 ## Integración continua
 
 `.github/workflows/ci.yml` corre en cada push y en cada pull request:
