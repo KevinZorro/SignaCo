@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  # En ramas con pull request abierto basta con el evento pull_request: si además se
+  # escuchara cada push, cada commit dispararia dos veces el mismo trabajo.
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificacion:
+    name: Compilar, probar y analizar
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar el JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Instalar el SDK de Android
+        uses: android-actions/setup-android@v3
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar la app
+        run: ./gradlew assembleDebug
+
+      - name: Pruebas unitarias
+        run: ./gradlew testDebugUnitTest
+
+      - name: Analisis estatico (Android Lint)
+        run: ./gradlew lintDebug
+
+      - name: Guardar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-verificacion
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-*.html
+            app/build/reports/lint-results-*.xml
+          if-no-files-found: ignore
+
+  pruebas-instrumentadas:
+    name: Pruebas de base de datos en emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar el JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Instalar el SDK de Android
+        uses: android-actions/setup-android@v3
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # El emulador necesita virtualizacion por hardware para no tardar una eternidad.
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Correr las pruebas instrumentadas
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest
+
+      - name: Guardar reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-instrumentadas
+          path: app/build/reports/androidTests/
+          if-no-files-found: ignore
