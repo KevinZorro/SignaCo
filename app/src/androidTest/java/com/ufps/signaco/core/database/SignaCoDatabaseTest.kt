@@ -18,7 +18,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -177,14 +176,26 @@ class SignaCoDatabaseTest {
     }
 
     @Test
-    fun elCatalogoNoSeDuplicaAlVolverAAbrirLaBase() = runBlocking {
+    fun volverASembrarNoDuplicaElCatalogo() = runBlocking {
         esperarCatalogo()
 
-        // onOpen vuelve a sembrar solo si las tablas quedaron vacías.
-        val antes = base.senaDao().contarSenas()
-        base.senaDao().observarSenas().first()
-        assertTrue(antes == base.senaDao().contarSenas())
-        assertEquals(27, antes)
+        // La precarga se puede disparar más de una vez (onCreate y onOpen). Como las claves
+        // primarias son estables, insertar de nuevo reemplaza en vez de duplicar.
+        base.senaDao().insertarSenas(CatalogoInicial.SENAS)
+        base.leccionDao().insertarLecciones(CatalogoInicial.LECCIONES)
+        base.leccionDao().insertarRelaciones(CatalogoInicial.RELACIONES)
+
+        assertEquals(27, base.senaDao().contarSenas())
+        assertEquals(5, base.leccionDao().contarLecciones())
+        assertEquals(
+            listOf("A", "E", "I", "O", "U"),
+            base.leccionDao()
+                .observarLeccionConSenas(CatalogoInicial.LECCION_VOCALES)
+                .first()!!
+                .senas
+                .sortedBy { it.orden }
+                .map { it.id },
+        )
     }
 
     private companion object {
