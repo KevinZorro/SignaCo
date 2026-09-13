@@ -1,11 +1,14 @@
-package com.ufps.signaco.core.reconocimiento.domain
+package com.ufps.signaco.core.reconocimiento.data
+
+import com.ufps.signaco.core.reconocimiento.domain.Alfabeto
 
 /**
- * ANDAMIO TEMPORAL. Fabrica arreglos de landmarks falsos para desarrollar la UI de practica
- * mientras no existe la camara. [com.ufps.signaco.core.reconocimiento.data.FakeSignClassifier]
- * sabe leerlos; el clasificador real los tratara como cualquier otro frame.
+ * Codifica letras en arreglos de 63 floats para que [FakeSignClassifier] pueda devolver
+ * resultados predecibles.
  *
- * Se borra cuando se porte la captura con CameraX. Nada fuera de practica deberia usarlo.
+ * Era el andamio de la pantalla de práctica antes de que existiera la cámara. Ahora que la
+ * cámara es real, esto vive aquí como detalle interno del clasificador falso, que se conserva
+ * para las pruebas unitarias y para desarrollar sin dispositivo.
  */
 object LandmarksSimulados {
 

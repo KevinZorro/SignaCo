@@ -1,7 +1,7 @@
 package com.ufps.signaco.core.reconocimiento
 
 import com.ufps.signaco.core.reconocimiento.data.FakeSignClassifier
-import com.ufps.signaco.core.reconocimiento.domain.LandmarksSimulados
+import com.ufps.signaco.core.reconocimiento.data.LandmarksSimulados
 import com.ufps.signaco.core.reconocimiento.domain.ResultadoClasificacion
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest

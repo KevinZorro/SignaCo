@@ -3,9 +3,8 @@
 App Android para aprender el abecedario dactilológico de la Lengua de Señas Colombiana.
 Proyecto académico, Universidad Francisco de Paula Santander.
 
-Este repositorio contiene el **esqueleto**: estructura, navegación, persistencia y pantallas
-funcionando sobre datos de prueba. El reconocimiento está detrás de una interfaz con una
-implementación falsa, para poder construir pantallas sin depender del modelo.
+El reconocimiento real ya está integrado: CameraX captura, MediaPipe extrae los landmarks de la
+mano y un modelo TensorFlow Lite clasifica la seña, todo en el dispositivo.
 
 ## Cómo está organizado
 
@@ -68,11 +67,11 @@ interface SignClassifier {
 
 Dos implementaciones en `core/reconocimiento/data`:
 
-- **`FakeSignClassifier`** — la que está activa. Lee los frames falsos que fabrica
-  `LandmarksSimulados`, responde con un retardo parecido al real y da una confianza estable
-  por letra.
-- **`TFLiteSignClassifier`** — esqueleto con la firma correcta y los TODO del port. Su KDoc
-  tiene los cinco pasos de normalización en orden, que es lo que no se puede equivocar.
+- **`TFLiteSignClassifier`** — la que está activa. Carga el `.tflite` una sola vez con
+  `MappedByteBuffer`, corre la inferencia fuera del hilo principal y decide la letra de un frame.
+  No guarda estado entre frames.
+- **`FakeSignClassifier`** — se conserva. Devuelve resultados predecibles y sirve para las
+  pruebas unitarias y para desarrollar sin dispositivo.
 
 **Cambiar de una a otra es una línea** (RNF-21), en
 `core/di/ReconocimientoModule.kt`:
@@ -80,24 +79,66 @@ Dos implementaciones en `core/reconocimiento/data`:
 ```kotlin
 @Binds
 @Singleton
-abstract fun enlazarClasificador(implementacion: FakeSignClassifier): SignClassifier
-//                                               ^ cambiar por TFLiteSignClassifier
+abstract fun enlazarClasificador(implementacion: TFLiteSignClassifier): SignClassifier
+//                                               ^ cambiar por FakeSignClassifier para
+//                                                 trabajar sin dispositivo
 ```
 
 Ni `presentation` ni `domain` se enteran.
 
-### El andamio de simulación
+### El camino de un frame
 
-Como todavía no hay cámara, la pantalla de práctica tiene cuatro botones que fuerzan cada
-desenlace. Van por `SimularIntentoUseCase`, que fabrica el frame y lo pasa por
-`EvaluarIntentoUseCase`: **el mismo camino que recorrerá el frame real**. Al portar la
-cámara se borran tres cosas y nada más:
+```
+CameraX ImageAnalysis
+  → AnalizadorDeManosMediaPipe   (data)  landmarks crudos + handedness
+  → NormalizadorDeLandmarks      (domain) los 5 pasos -> 63 floats
+  → PracticaViewModel            (presentation) descarta el frame si hay otro en curso
+  → ProcesarFrameUseCase         (domain)
+      → SignClassifier           una letra, o rechazo
+      → EstabilizadorDePredicciones  k frames iguales (RF07)
+      → EvaluarIntentoUseCase    solo al confirmarse: compara y registra progreso
+```
 
-1. `LandmarksSimulados` (`core/reconocimiento/domain`)
-2. `SimularIntentoUseCase` y `TipoDeSimulacion` (`feature/practica/domain`)
-3. `ControlesDeSimulacion` dentro de `PracticaScreen`
+MediaPipe y CameraX no pasan de la capa de datos y de la vista previa. El dominio solo ve
+`FloatArray`. No se almacena ni un frame: se analiza y se descarta (RNF-06).
 
-`EvaluarIntentoUseCase` se queda igual.
+**Un intento no es un frame.** La cámara da hasta 30 frames por segundo pero
+`EvaluarIntentoUseCase` se llama una vez por intento, porque registra progreso. Quien decide que
+un conjunto de frames constituye un intento es el estabilizador, que además confirma **una sola
+vez por racha**: sin ese pestillo, sostener la mano quieta registraría diez intentos por segundo.
+
+### Vocabulario activo: 19 de 27
+
+El modelo clasifica 28 clases, pero la app solo enseña 19 letras:
+
+```
+A B D F G I J L O P Q R S T U V W X Y
+```
+
+Quedan fuera **C, E, H, K, M, N, Ñ y Z**. Z y Ñ son señas dinámicas y el clasificador es de poses
+estáticas; las otras seis se confunden de forma sistemática con cámara real.
+
+El modelo no se reentrena ni se modifica: el filtrado es de la app y vive en `VocabularioActivo`,
+que es además la fuente de la que `CatalogoInicial` deriva el `disponible` de cada seña, para que
+el catálogo y el clasificador no puedan separarse.
+
+**Las probabilidades no se renormalizan sobre las 19 activas.** Los umbrales de
+`config_rechazo.json` están calibrados contra la distribución cruda de 28 clases; renormalizar
+dividiría por una suma menor que 1, inflaría las confianzas y aflojaría los umbrales en silencio.
+Se hace `argmax` restringido a las activas y se compara la probabilidad cruda. Además, la clase
+de rechazo manda sobre todo lo demás.
+
+### Modo de depuración
+
+`RegistroDeDepuracion` vuelca por Logcat, con la etiqueta `SignaCO_Debug` y solo en builds de
+depuración: los 63 floats de entrada con sus estadísticos por eje, las 28 probabilidades **con su
+suma** (si no da ~1.0, la salida no es un softmax y los umbrales no significan lo que parecen),
+el top-5, el ganador global y el ganador tras filtrar, el umbral aplicado con su procedencia, y
+los tiempos de MediaPipe y de la inferencia por separado.
+
+Cierra con un diagnóstico que distingue los casos que se confunden entre sí: la inferencia no
+corrió, la distribución es casi uniforme (normalización mal), ganó el rechazo, ganó una letra
+excluida, o el umbral rechazó. Es lo que permite comparar contra el notebook de Python.
 
 ## Base de datos
 
@@ -113,13 +154,17 @@ Los esquemas se exportan a `app/schemas`. Al subir la versión hay que escribir 
 
 ## Decisiones que conviene conocer antes de tocar algo
 
-- **El umbral de confianza no está en el código.** Vive en `config_rechazo.json` y lo aplica
-  el clasificador. Cuando `EvaluarIntentoUseCase` recibe una `LetraReconocida`, ya pasó el
-  umbral. No agregar comparaciones de confianza en los casos de uso.
-- **Un intento no es un frame.** `EvaluarIntentoUseCase` se llama una vez por intento del
-  usuario. La estabilidad temporal (parámetro `k`) se resolverá en la capa de captura.
-- **La enie está en el catálogo pero no en el MVP.** `Sena.disponible = false`: se ve en el
-  diccionario, no se practica ni entra en los quiz ni en los denominadores del progreso.
+- **La normalización no se toca.** Los cinco pasos de `NormalizadorDeLandmarks` están portados
+  del spike y validados contra el notebook. Si difieren aunque sea en el orden, el modelo
+  devuelve basura sin lanzar ninguna excepción. Hay pruebas unitarias que fijan cada paso.
+- **Hay dos espejados distintos y ninguno sustituye al otro.** Uno voltea el bitmap de la cámara
+  frontal porque MediaPipe da por supuesta una imagen de selfie; el otro voltea la X cuando la
+  mano es izquierda. Si las letras salen cambiadas, son los dos sospechosos, y el log imprime
+  ambos en cada frame.
+- **El umbral de confianza y la k no están en el código.** Viven en `config_rechazo.json` y se
+  ajustan sin recompilar. No agregar comparaciones de confianza en los casos de uso.
+- **Las señas excluidas siguen en el catálogo.** `disponible = false`: se ven en el diccionario,
+  no se practican ni entran en los quiz ni en los denominadores del progreso.
 - **El objetivo de un intento es el `id` de la seña, no la letra.** El `id` es la etiqueta
   que devuelve el modelo (`"A".."Z"`, `"NN"`); `letra` es lo que se le muestra al usuario y
   para la enie no coincide.
@@ -130,10 +175,13 @@ Los esquemas se exportan a `app/schemas`. Al subir la versión hay que escribir 
 
 ## Privacidad
 
-La app **no declara el permiso de INTERNET** y no debe declararlo. Todo el procesamiento es
-en el dispositivo y el progreso vive solo en almacenamiento local (RNF-06 a RNF-08).
+La app **no declara el permiso de INTERNET** y no debe declararlo. Declara `CAMERA` y nada más.
+Todo el procesamiento es en el dispositivo y el progreso vive solo en almacenamiento local
+(RNF-06 a RNF-08).
 
-Cuando se porte la cámara habrá que agregar `android.permission.CAMERA`. Nada más.
+No se almacena vídeo ni imágenes: cada frame se convierte en 63 floats, se clasifica y se
+descarta. El permiso se pide con una explicación de para qué sirve, y si se deniega la pantalla
+ofrece reintentar o abrir los ajustes, sin cerrarse (RNF-13).
 
 ## Accesibilidad
 
@@ -215,6 +263,13 @@ Los reportes de pruebas y de lint quedan como artefactos de cada ejecución.
 
 ## Estado
 
-Lo que **no** está hecho, a propósito: cámara (CameraX), MediaPipe HandLandmarker,
-inferencia TFLite, imágenes o vídeos de referencia de las señas, y las extensiones
-(insignias, repaso espaciado, estadísticas detalladas).
+Lo que **no** está hecho:
+
+- **RF15**: el quiz debería pedir ejecutar la seña frente a la cámara reutilizando el motor de
+  reconocimiento. Hoy es de opción múltiple en texto. Es un *Must* pendiente.
+- **RF02**: falta la imagen o clip de referencia de cada seña; solo hay descripción textual.
+- **RF26**: ajustar el umbral y el tamaño de fuente desde la app.
+- Las extensiones (insignias, repaso espaciado, estadísticas detalladas).
+
+Pendiente de medir en dispositivo: los fps del RNF02 y la latencia del RNF01, y si el modo
+estricto del filtrado de vocabulario conviene más que el permisivo.

@@ -6,9 +6,13 @@
         Todo el procesamiento es en el dispositivo y el progreso vive en almacenamiento local.
         No agregar el permiso de INTERNET.
 
-        Cuando se porte el spike de camara habra que declarar android.permission.CAMERA
-        y <uses-feature android:name="android.hardware.camera" />. Todavia no aplica.
+        La camara se declara abajo. INTERNET no, y no debe agregarse.
     -->
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="true" />
 
     <application
         android:name=".SignaCoApplication"

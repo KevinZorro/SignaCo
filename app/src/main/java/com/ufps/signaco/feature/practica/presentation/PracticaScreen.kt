@@ -1,5 +1,9 @@
 package com.ufps.signaco.feature.practica.presentation
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,8 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,11 +55,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
 import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.core.senas.domain.model.Sena
+import com.ufps.signaco.core.ui.componentes.BarraDeAvance
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
-import com.ufps.signaco.feature.practica.domain.model.TipoDeSimulacion
+import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
+import com.ufps.signaco.feature.practica.presentation.camara.SolicitarPermisoDeCamara
+import com.ufps.signaco.feature.practica.presentation.camara.VistaPreviaDeCamara
 import kotlin.math.roundToInt
 
 @Composable
@@ -62,30 +73,62 @@ fun PracticaScreen(
     viewModel: PracticaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SolicitarPermisoDeCamara(
+        alResponder = viewModel::alResponderElPermiso,
+        solicitar = uiState.permiso == EstadoDelPermiso.PENDIENTE,
+    )
+
+    val descripcionDeLaCamara = stringResource(R.string.cd_vista_previa)
+
     PracticaContenido(
         uiState = uiState,
         onVolver = onVolver,
-        onSimular = viewModel::simular,
+        onAlternarCaptura = viewModel::alternarCaptura,
+        onCambiarCamara = viewModel::cambiarDeCamara,
+        onReintentarSena = viewModel::reintentarSena,
+        onReintentar = viewModel::reintentar,
         onSiguiente = viewModel::siguienteSena,
         onTerminar = { onTerminar(viewModel.leccionId) },
         onCambiarPistas = viewModel::cambiarMostrarPistas,
         modifier = modifier,
+        vistaDeCamara = {
+            VistaPreviaDeCamara(
+                camaraFrontal = uiState.camaraFrontal,
+                activa = uiState.procesandoFrames,
+                alLlegarFrame = viewModel::alLlegarFrame,
+                alFallar = viewModel::informarErrorDeCamara,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
+                    .semantics { contentDescription = descripcionDeLaCamara },
+            )
+        },
     )
 }
 
+/**
+ * Separado del ViewModel a propósito: así se puede previsualizar y probar con estados
+ * inventados, sin Hilt y sin cámara. La vista de cámara entra como slot por lo mismo.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PracticaContenido(
     uiState: PracticaUiState,
     onVolver: () -> Unit,
-    onSimular: (TipoDeSimulacion) -> Unit,
+    onAlternarCaptura: () -> Unit,
+    onCambiarCamara: () -> Unit,
+    onReintentarSena: () -> Unit,
+    onReintentar: () -> Unit,
     onSiguiente: () -> Unit,
     onTerminar: () -> Unit,
     onCambiarPistas: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    vistaDeCamara: @Composable () -> Unit = {},
 ) {
-    // RNF-09: el acierto se anuncia por texto, por icono y, si el usuario lo tiene activado,
-    // también por vibración. Nunca solo por color ni solo por sonido.
+    // RNF-11: el acierto se anuncia por texto, por icono y, si el usuario lo tiene activado,
+    // también por vibración (RF11). Nunca solo por color ni solo por sonido.
+    val contexto = LocalContext.current
     val haptica = LocalHapticFeedback.current
     LaunchedEffect(uiState.retroalimentacion) {
         if (uiState.retroalimentacion is EstadoDeRetroalimentacion.Acertada &&
@@ -121,6 +164,18 @@ fun PracticaContenido(
                 modifier = Modifier.padding(relleno),
             )
 
+            uiState.permiso == EstadoDelPermiso.DENEGADO -> PermisoDenegado(
+                onReintentar = onReintentar,
+                onAbrirAjustes = { contexto.abrirAjustesDeLaApp() },
+                modifier = Modifier.padding(relleno),
+            )
+
+            uiState.errorDelReconocimiento != null -> EstadoDeError(
+                mensaje = stringResource(textoDelError(uiState.errorDelReconocimiento)),
+                onReintentar = onReintentar,
+                modifier = Modifier.padding(relleno),
+            )
+
             sena == null -> MensajeVacio(
                 mensaje = stringResource(R.string.practica_sin_senas),
                 modifier = Modifier.padding(relleno),
@@ -134,7 +189,9 @@ fun PracticaContenido(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                VistaDeCamaraPendiente()
+                vistaDeCamara()
+
+                IndicadorDeReconocimiento(uiState)
 
                 Text(
                     text = stringResource(R.string.practica_sena_objetivo, sena.letra),
@@ -162,9 +219,11 @@ fun PracticaContenido(
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
-                ControlesDeSimulacion(
-                    habilitados = !uiState.evaluando,
-                    onSimular = onSimular,
+                ControlesDeCaptura(
+                    uiState = uiState,
+                    onAlternarCaptura = onAlternarCaptura,
+                    onCambiarCamara = onCambiarCamara,
+                    onReintentarSena = onReintentarSena,
                 )
 
                 Row(
@@ -176,61 +235,158 @@ fun PracticaContenido(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    Switch(
-                        checked = uiState.mostrarPistas,
-                        onCheckedChange = onCambiarPistas,
-                    )
+                    Switch(checked = uiState.mostrarPistas, onCheckedChange = onCambiarPistas)
                 }
 
-                if (uiState.esLaUltima) {
-                    Button(
-                        onClick = onTerminar,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Text(stringResource(R.string.practica_terminar))
-                    }
-                } else {
-                    Button(
-                        onClick = onSiguiente,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Text(stringResource(R.string.practica_siguiente))
-                    }
+                Button(
+                    onClick = if (uiState.esLaUltima) onTerminar else onSiguiente,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) {
+                    Text(
+                        text = if (uiState.esLaUltima) {
+                            stringResource(R.string.practica_terminar)
+                        } else {
+                            stringResource(R.string.practica_siguiente)
+                        },
+                    )
                 }
             }
         }
     }
 }
 
-/** Hueco donde irá la vista previa de CameraX. Se reemplaza al portar el spike. */
+/** RF09: el estado del reconocimiento se ve en todo momento, con texto además del color. */
 @Composable
-private fun VistaDeCamaraPendiente(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(4f / 3f),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.large,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+private fun IndicadorDeReconocimiento(uiState: PracticaUiState, modifier: Modifier = Modifier) {
+    val texto = when (uiState.estadoDeReconocimiento) {
+        EstadoDeReconocimiento.SIN_DETECCION -> stringResource(R.string.practica_estado_sin_deteccion)
+        EstadoDeReconocimiento.BUSCANDO_MANOS ->
+            stringResource(R.string.practica_estado_buscando_manos)
+        EstadoDeReconocimiento.RECONOCIENDO -> stringResource(R.string.practica_estado_reconociendo)
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(text = texto, style = MaterialTheme.typography.labelLarge)
+        if (uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO &&
+            uiState.framesParaConfirmar > 0
         ) {
-            Text(
-                text = stringResource(R.string.practica_camara_placeholder),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.practica_camara_pendiente),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+            val avance = uiState.avanceDeEstabilidad
+            val total = uiState.framesParaConfirmar
+            BarraDeAvance(
+                porcentaje = avance.toFloat() / total,
+                descripcionAccesible = stringResource(R.string.practica_estabilidad, avance, total),
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
+}
+
+@Composable
+private fun ControlesDeCaptura(
+    uiState: PracticaUiState,
+    onAlternarCaptura: () -> Unit,
+    onCambiarCamara: () -> Unit,
+    onReintentarSena: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // RF10: un control único, visible y accesible, para iniciar y detener la captura.
+        OutlinedButton(
+            onClick = onAlternarCaptura,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) {
+            Text(
+                text = if (uiState.capturando) {
+                    stringResource(R.string.practica_detener_captura)
+                } else {
+                    stringResource(R.string.practica_iniciar_captura)
+                },
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // RF04
+            TextButton(
+                onClick = onCambiarCamara,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.practica_cambiar_camara))
+            }
+            // RF13
+            TextButton(
+                onClick = onReintentarSena,
+                enabled = uiState.intentoConfirmado,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.practica_reintentar_sena))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermisoDenegado(
+    onReintentar: () -> Unit,
+    onAbrirAjustes: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(48.dp),
+        )
+        Text(
+            text = stringResource(R.string.practica_permiso_titulo),
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        Text(
+            text = stringResource(R.string.practica_permiso_explicacion),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Button(
+            onClick = onReintentar,
+            modifier = Modifier.heightIn(min = 48.dp).padding(top = 24.dp),
+        ) {
+            Text(stringResource(R.string.practica_permiso_conceder))
+        }
+        // Cuando el sistema deja de mostrar el diálogo por haberlo denegado dos veces, pedirlo
+        // otra vez no hace nada. Este es el único camino que le queda al usuario.
+        TextButton(
+            onClick = onAbrirAjustes,
+            modifier = Modifier.heightIn(min = 48.dp).padding(top = 8.dp),
+        ) {
+            Text(stringResource(R.string.practica_permiso_ajustes))
+        }
+    }
+}
+
+private fun Context.abrirAjustesDeLaApp() {
+    runCatching {
+        startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", packageName, null),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
+}
+
+private fun textoDelError(error: ErrorDeReconocimiento): Int = when (error) {
+    ErrorDeReconocimiento.CAMARA -> R.string.practica_error_camara
+    ErrorDeReconocimiento.MODELO -> R.string.practica_error_modelo
+    ErrorDeReconocimiento.CONFIGURACION -> R.string.practica_error_configuracion
 }
 
 @Composable
@@ -321,63 +477,6 @@ private fun TarjetaDeRetroalimentacion(
     }
 }
 
-/**
- * ANDAMIO TEMPORAL. Botones para forzar cada desenlace mientras no hay cámara. Se borran
- * cuando la captura real alimente al clasificador.
- */
-@Composable
-private fun ControlesDeSimulacion(
-    habilitados: Boolean,
-    onSimular: (TipoDeSimulacion) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.practica_simulacion_titulo),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { onSimular(TipoDeSimulacion.SENA_CORRECTA) },
-                enabled = habilitados,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-            ) {
-                Text(stringResource(R.string.practica_simular_correcta))
-            }
-            OutlinedButton(
-                onClick = { onSimular(TipoDeSimulacion.OTRA_LETRA) },
-                enabled = habilitados,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-            ) {
-                Text(stringResource(R.string.practica_simular_otra))
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { onSimular(TipoDeSimulacion.NO_RECONOCIDA) },
-                enabled = habilitados,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-            ) {
-                Text(stringResource(R.string.practica_simular_no_reconocida))
-            }
-            OutlinedButton(
-                onClick = { onSimular(TipoDeSimulacion.MANO_FUERA) },
-                enabled = habilitados,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-            ) {
-                Text(stringResource(R.string.practica_simular_sin_mano))
-            }
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun PracticaPreview() {
@@ -385,6 +484,11 @@ private fun PracticaPreview() {
         PracticaContenido(
             uiState = PracticaUiState(
                 cargando = false,
+                permiso = EstadoDelPermiso.CONCEDIDO,
+                capturando = true,
+                estadoDeReconocimiento = EstadoDeReconocimiento.RECONOCIENDO,
+                avanceDeEstabilidad = 2,
+                framesParaConfirmar = 3,
                 senas = listOf(
                     Sena(
                         id = "A",
@@ -400,7 +504,10 @@ private fun PracticaPreview() {
                 aciertosDeLaSesion = 3,
             ),
             onVolver = {},
-            onSimular = {},
+            onAlternarCaptura = {},
+            onCambiarCamara = {},
+            onReintentarSena = {},
+            onReintentar = {},
             onSiguiente = {},
             onTerminar = {},
             onCambiarPistas = {},

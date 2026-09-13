@@ -18,6 +18,11 @@ hiltNavigationCompose = "1.2.0"
 room = "2.7.2"
 datastore = "1.1.7"
 
+# --- Cámara, visión e inferencia (portado del spike) ---
+cameraX = "1.4.2"
+mediapipeTasksVision = "0.10.14"
+tensorflowLite = "2.17.0"
+
 junit = "4.13.2"
 turbine = "1.2.1"
 junitVersion = "1.1.5"
@@ -61,6 +66,14 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# --- Cámara, visión e inferencia ---
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
+mediapipe-tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision", version.ref = "mediapipeTasksVision" }
+tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
 
 # --- Pruebas ---
 junit = { group = "junit", name = "junit", version.ref = "junit" }
