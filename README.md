@@ -141,6 +141,25 @@ Cierra con un diagnóstico que distingue los casos que se confunden entre sí: l
 corrió, la distribución es casi uniforme (normalización mal), ganó el rechazo, ganó una letra
 excluida, o el umbral rechazó. Es lo que permite comparar contra el notebook de Python.
 
+Los niveles están repartidos a propósito: el bloque de arranque, el diagnóstico, el latido y la
+comparación de aspecto van en **INFO**; el volcado por frame de los 63 floats y las 28
+probabilidades va en **DEBUG**. Así `-s SignaCO_Debug:I` deja lo que se lee y quita lo que
+satura Logcat.
+
+### El latido, para que el silencio no sea ambiguo
+
+Un frame sin mano no llega al clasificador, así que antes no registraba nada: "MediaPipe no ve
+la mano" y "el log no funciona" se veían exactamente igual. `registrarFrameDeCamara` imprime una
+línea por segundo desde el analizador, en cada frame que entrega la cámara:
+
+```
+[LATIDO] 28.6 frames/s de cámara | imagen 480x640 rot=90 | MediaPipe: 0 con mano, 28 sin mano  <- MediaPipe no ve ninguna mano
+```
+
+Late aunque MediaPipe deje de invocar su listener, porque se alimenta del frame de CameraX y no
+del resultado. Si con la captura encendida no aparece ni un latido, el problema está antes de
+MediaPipe: build de release, captura apagada, permiso denegado o la cámara sin enlazar.
+
 ### Diagnóstico de la relación de aspecto (TEMPORAL)
 
 `DiagnosticoDeAspecto` está para contestar una pregunta y luego se borra, con todo lo que cuelga
@@ -160,6 +179,13 @@ Para leerlo, filtrando el volcado por frame que si no satura Logcat:
 
 ```
 adb logcat -c && adb logcat -s SignaCO_Debug:I
+```
+
+Si ahí no sale nada, el siguiente paso es mirar todo lo que escribe el proceso, incluidos los
+errores nativos de MediaPipe y de TensorFlow Lite, que no llevan nuestra etiqueta:
+
+```
+adb logcat -c && adb logcat --pid=$(adb shell pidof -s com.ufps.signaco)
 ```
 
 Cada 30 frames imprime un resumen con un veredicto. Cuando conteste, se adopta la corrección o
