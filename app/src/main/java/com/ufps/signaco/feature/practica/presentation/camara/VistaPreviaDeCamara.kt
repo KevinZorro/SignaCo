@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ufps.signaco.core.reconocimiento.data.DiagnosticoDeAspecto
 import com.ufps.signaco.core.reconocimiento.data.RegistroDeDepuracion
 import com.ufps.signaco.feature.practica.data.camara.AnalizadorDeManosMediaPipe
 import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
@@ -50,19 +51,23 @@ fun VistaPreviaDeCamara(
     val alLlegarFrameActual by rememberUpdatedState(alLlegarFrame)
     val alFallarActual by rememberUpdatedState(alFallar)
 
-    val registro = remember(contexto) {
+    val dependencias = remember(contexto) {
         EntryPointAccessors
             .fromApplication(contexto.applicationContext, DependenciasDeCamara::class.java)
-            .registroDeDepuracion()
     }
+    val registro = dependencias.registroDeDepuracion()
+    val diagnostico = dependencias.diagnosticoDeAspecto()
 
     // Un hilo propio para el análisis: si corriera en el principal, la vista previa se trabaría.
     val ejecutor = remember { Executors.newSingleThreadExecutor() }
     val vistaPrevia = remember { PreviewView(contexto) }
 
-    val analizador = remember(registro) {
+    val analizador = remember(dependencias) {
         runCatching {
-            AnalizadorDeManosMediaPipe(contexto, registro) { frame -> alLlegarFrameActual(frame) }
+            diagnostico.reiniciar()
+            AnalizadorDeManosMediaPipe(contexto, registro, diagnostico) { frame ->
+                alLlegarFrameActual(frame)
+            }
         }.onFailure { alFallarActual() }.getOrNull()
     }
 
@@ -127,4 +132,7 @@ private suspend fun Context.proveedorDeCamara(): ProcessCameraProvider = suspend
 @InstallIn(SingletonComponent::class)
 internal interface DependenciasDeCamara {
     fun registroDeDepuracion(): RegistroDeDepuracion
+
+    /** Diagnóstico temporal de la relación de aspecto. Se quita junto con él. */
+    fun diagnosticoDeAspecto(): DiagnosticoDeAspecto
 }

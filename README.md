@@ -26,7 +26,7 @@ com.ufps.signaco
 │   └── ui/                      tema y componentes compartidos
 └── feature/
     ├── lecciones/   {domain, data, presentation/{catalogo, detalle}}
-    ├── practica/    {domain, presentation}
+    ├── practica/    {domain, data/camara, presentation}
     ├── quiz/        {domain, presentation}
     ├── progreso/    {domain, data, presentation}
     └── diccionario/ {domain, presentation}
@@ -35,11 +35,12 @@ com.ufps.signaco
 Las dependencias siempre apuntan hacia `domain`. `domain` no conoce Room, ni Compose, ni
 Android: son clases de Kotlin puro, y por eso se pueden probar con JUnit sin emulador.
 
-### Dos features sin carpeta `data`
+### `diccionario` sin carpeta `data`
 
-`practica` y `diccionario` no tienen capa de datos propia porque no tienen datos propios:
-leen del catálogo (`core/senas`), del progreso (`feature/progreso`) y del clasificador
-(`core/reconocimiento`). Cuando entre la cámara, `practica/data` será su casa natural.
+`diccionario` no tiene capa de datos propia porque no tiene datos propios: lee del catálogo
+(`core/senas`) y del progreso (`feature/progreso`). `practica` sí la tiene desde que entró la
+cámara, y contiene solo `data/camara`: el resto lo toma del catálogo, del progreso y del
+clasificador (`core/reconocimiento`).
 
 ### Quién depende de quién entre features
 
@@ -139,6 +140,30 @@ los tiempos de MediaPipe y de la inferencia por separado.
 Cierra con un diagnóstico que distingue los casos que se confunden entre sí: la inferencia no
 corrió, la distribución es casi uniforme (normalización mal), ganó el rechazo, ganó una letra
 excluida, o el umbral rechazó. Es lo que permite comparar contra el notebook de Python.
+
+### Diagnóstico de la relación de aspecto (TEMPORAL)
+
+`DiagnosticoDeAspecto` está para contestar una pregunta y luego se borra, con todo lo que cuelga
+de él: `NormalizadorDeLandmarks.corregirRelacionDeAspecto`, `TFLiteSignClassifier.probabilidadesDe`
+y el parámetro `diagnostico` del analizador.
+
+La pregunta: el modelo se entrenó sobre recortes de 120x120, que son **cuadrados**. La cámara
+entrega 3:4. MediaPipe no devuelve píxeles, devuelve `x` dividido entre el ancho y `y` dividido
+entre el alto, así que con una imagen 3:4 el eje `y` llega comprimido un 25 % respecto a `x`.
+Trasladar a la muñeca y dividir por la norma máxima quita el **tamaño**, no la deformación: el
+modelo estaría viendo una mano achatada en todos los frames.
+
+En vez de cambiar el pipeline a ciegas, esto pasa el mismo frame por el modelo dos veces —tal
+como está hoy y con el aspecto corregido— y anota cuál gana. No altera lo que ve el usuario.
+
+Para leerlo, filtrando el volcado por frame que si no satura Logcat:
+
+```
+adb logcat -c && adb logcat -s SignaCO_Debug:I
+```
+
+Cada 30 frames imprime un resumen con un veredicto. Cuando conteste, se adopta la corrección o
+se descarta, y este archivo y el diagnóstico se van.
 
 ## Base de datos
 
@@ -248,12 +273,26 @@ pantallas no compilan (`Unresolved reference 'Icons'`).
 
 ## Integración continua
 
-`.github/workflows/ci.yml` corre en cada push y en cada pull request:
+`.github/workflows/ci.yml`, **una sola verificación por cambio**:
+
+| Evento | `verificacion` | `pruebas-instrumentadas` |
+|---|---|---|
+| `pull_request` | sí | no |
+| `push` a `master` | sí | sí |
+| `workflow_dispatch` | sí | sí |
 
 | Job | Qué hace |
 |---|---|
-| `verificacion` | `assembleDebug`, `testDebugUnitTest` y `lintDebug` |
+| `verificacion` | `assembleDebug`, `testDebugUnitTest` y `lintDebug`, en una sola invocación de Gradle |
 | `pruebas-instrumentadas` | las pruebas de base de datos en un emulador API 34 |
+
+El emulador es lo más lento del pipeline y lo que comprueba —que Room ejecute sus consultas
+contra un SQLite real— casi no cambia entre commits de una rama, así que solo corre al llegar
+a `master`.
+
+**Para sincronizar tu rama con `master` no abras un pull request de `master` hacia la rama**:
+eso dispara una verificación extra sobre código ya verificado. Usa el botón *Update branch* del
+propio pull request, o en local `git merge master`.
 
 `assembleDebug` es más que una compilación: Room valida cada `@Query` contra el esquema y
 Hilt valida el grafo completo de dependencias. Si una consulta tiene mal un nombre de columna
