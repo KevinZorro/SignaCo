@@ -70,19 +70,6 @@ class TFLiteSignClassifier @Inject constructor(
             decidir(landmarks, salida[0], configuracion, milisegundos)
         }
 
-    /**
-     * DIAGNÓSTICO TEMPORAL. La salida cruda del modelo, sin decidir nada y sin registrar nada.
-     * La usa [DiagnosticoDeAspecto] para pasar dos versiones del mismo frame por el modelo y
-     * comparar cuál prefiere. Fuera de eso, la app entra siempre por [clasificar].
-     */
-    suspend fun probabilidadesDe(landmarks: FloatArray): FloatArray = withContext(dispatcher) {
-        if (landmarks.size != NormalizadorDeLandmarks.VALORES) return@withContext FloatArray(0)
-        val (interprete, configuracion) = asegurarInicializado()
-        val salida = Array(1) { FloatArray(configuracion.totalDeClases) }
-        interprete.run(arrayOf(landmarks), salida)
-        salida[0]
-    }
-
     private fun decidir(
         landmarks: FloatArray,
         probabilidades: FloatArray,

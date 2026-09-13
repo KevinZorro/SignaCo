@@ -141,10 +141,20 @@ Cierra con un diagnóstico que distingue los casos que se confunden entre sí: l
 corrió, la distribución es casi uniforme (normalización mal), ganó el rechazo, ganó una letra
 excluida, o el umbral rechazó. Es lo que permite comparar contra el notebook de Python.
 
-Los niveles están repartidos a propósito: el bloque de arranque, el diagnóstico, el latido y la
-comparación de aspecto van en **INFO**; el volcado por frame de los 63 floats y las 28
-probabilidades va en **DEBUG**. Así `-s SignaCO_Debug:I` deja lo que se lee y quita lo que
-satura Logcat.
+Los niveles están repartidos a propósito: el bloque de arranque, el diagnóstico y el latido van
+en **INFO**; el volcado por frame de los 63 floats y las 28 probabilidades va en **DEBUG**. Así
+`-s SignaCO_Debug:I` deja lo que se lee y quita lo que satura Logcat:
+
+```
+adb logcat -c && adb logcat -s SignaCO_Debug:I
+```
+
+Si ahí no sale nada, el siguiente paso es mirar todo lo que escribe el proceso, incluidos los
+errores nativos de MediaPipe y de TensorFlow Lite, que no llevan nuestra etiqueta:
+
+```
+adb logcat -c && adb logcat --pid=$(adb shell pidof -s com.ufps.signaco)
+```
 
 ### El latido, para que el silencio no sea ambiguo
 
@@ -159,37 +169,6 @@ línea por segundo desde el analizador, en cada frame que entrega la cámara:
 Late aunque MediaPipe deje de invocar su listener, porque se alimenta del frame de CameraX y no
 del resultado. Si con la captura encendida no aparece ni un latido, el problema está antes de
 MediaPipe: build de release, captura apagada, permiso denegado o la cámara sin enlazar.
-
-### Diagnóstico de la relación de aspecto (TEMPORAL)
-
-`DiagnosticoDeAspecto` está para contestar una pregunta y luego se borra, con todo lo que cuelga
-de él: `NormalizadorDeLandmarks.corregirRelacionDeAspecto`, `TFLiteSignClassifier.probabilidadesDe`
-y el parámetro `diagnostico` del analizador.
-
-La pregunta: el modelo se entrenó sobre recortes de 120x120, que son **cuadrados**. La cámara
-entrega 3:4. MediaPipe no devuelve píxeles, devuelve `x` dividido entre el ancho y `y` dividido
-entre el alto, así que con una imagen 3:4 el eje `y` llega comprimido un 25 % respecto a `x`.
-Trasladar a la muñeca y dividir por la norma máxima quita el **tamaño**, no la deformación: el
-modelo estaría viendo una mano achatada en todos los frames.
-
-En vez de cambiar el pipeline a ciegas, esto pasa el mismo frame por el modelo dos veces —tal
-como está hoy y con el aspecto corregido— y anota cuál gana. No altera lo que ve el usuario.
-
-Para leerlo, filtrando el volcado por frame que si no satura Logcat:
-
-```
-adb logcat -c && adb logcat -s SignaCO_Debug:I
-```
-
-Si ahí no sale nada, el siguiente paso es mirar todo lo que escribe el proceso, incluidos los
-errores nativos de MediaPipe y de TensorFlow Lite, que no llevan nuestra etiqueta:
-
-```
-adb logcat -c && adb logcat --pid=$(adb shell pidof -s com.ufps.signaco)
-```
-
-Cada 30 frames imprime un resumen con un veredicto. Cuando conteste, se adopta la corrección o
-se descarta, y este archivo y el diagnóstico se van.
 
 ## Base de datos
 
