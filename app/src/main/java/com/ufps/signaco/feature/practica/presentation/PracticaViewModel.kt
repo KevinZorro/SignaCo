@@ -18,6 +18,8 @@ import com.ufps.signaco.feature.practica.domain.usecase.CrearEstabilizadorUseCas
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerSenasParaPracticarUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ProcesarFrameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +62,16 @@ class PracticaViewModel @Inject constructor(
      * que la retroalimentación llegue tarde (RNF01).
      */
     private val hayFrameEnProceso = AtomicBoolean(false)
+
+    /** La reanudación pendiente tras un intento fallido. Ver [programarReanudacion]. */
+    private var reanudacionPendiente: Job? = null
+
+    /**
+     * Cuánto se deja la retroalimentación en pantalla antes de reanudar sola. La pantalla la
+     * ajusta al arrancar con el tiempo que el sistema recomienda para leer un texto, que es más
+     * largo si la persona tiene activado "tiempo para realizar una acción" (RNF-11).
+     */
+    private var esperaAntesDeReanudar = ESPERA_POR_DEFECTO_MS
 
     private val senas = obtenerSenas(leccionId)
         .map { lista -> CargaDeSenas(cargando = false, senas = lista) }
@@ -105,7 +117,9 @@ class PracticaViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                aplicar(procesarFrame(senaObjetivo, frame, estabilizador))
+                val resultado = procesarFrame(senaObjetivo, frame, estabilizador)
+                aplicar(resultado)
+                programarReanudacion(resultado)
             } catch (e: Exception) {
                 Log.e(ETIQUETA, "Falló el procesamiento del frame", e)
                 estadoDeSesion.update {
@@ -144,8 +158,52 @@ class PracticaViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Tras un intento FALLIDO la captura se reanuda sola. Sin esto había que pulsar "volver a
+     * intentar" después de cada error, lo que corta el flujo justo donde más se practica.
+     *
+     * Un acierto sí sigue pausando: ahí la persona quiere leerlo y decidir si avanza.
+     *
+     * **No se reinicia el estabilizador**, y es a propósito. Su pestillo hace que sostener la
+     * misma seña equivocada NO vuelva a registrarse como intento; solo cuenta uno nuevo si la
+     * pose cambia, o si se baja la mano y se vuelve a subir, que es justo lo que es un intento
+     * nuevo. Reiniciarlo aquí llenaría el progreso de fallos repetidos por estar quieto.
+     *
+     * El botón de reintentar se queda: reanuda en el acto, sin esperar.
+     */
+    private fun programarReanudacion(resultado: ResultadoDeFrame) {
+        if (resultado !is ResultadoDeFrame.Confirmado) return
+        if (resultado.resultado is ResultadoIntento.Acierto) return
+
+        reanudacionPendiente?.cancel()
+        reanudacionPendiente = viewModelScope.launch {
+            delay(esperaAntesDeReanudar)
+            estadoDeSesion.update { sesion ->
+                // Si mientras tanto se avanzó, se reintentó a mano o se paró la captura, no hay
+                // nada que reanudar.
+                if (!sesion.intentoConfirmado) {
+                    sesion
+                } else {
+                    sesion.copy(
+                        intentoConfirmado = false,
+                        estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * La pantalla informa del tiempo que el sistema recomienda para leer un texto. Se consulta
+     * allí porque hace falta un Context, que no entra en el ViewModel.
+     */
+    fun ajustarEsperaDeReanudacion(milisegundos: Long) {
+        esperaAntesDeReanudar = milisegundos.coerceAtLeast(ESPERA_POR_DEFECTO_MS)
+    }
+
     /** RF10: el mismo control inicia y detiene la captura. */
     fun alternarCaptura() {
+        reanudacionPendiente?.cancel()
         estadoDeSesion.update { sesion ->
             val capturando = !sesion.capturando
             if (!capturando) estabilizador?.reiniciar()
@@ -189,6 +247,7 @@ class PracticaViewModel @Inject constructor(
 
     /** RNF-13: siempre se puede reintentar sin reiniciar la app. */
     fun reintentar() {
+        reanudacionPendiente?.cancel()
         estabilizador?.reiniciar()
         estadoDeSesion.update {
             it.copy(
@@ -202,6 +261,7 @@ class PracticaViewModel @Inject constructor(
 
     /** RF13: reintentar la misma seña sin salir de la lección. */
     fun reintentarSena() {
+        reanudacionPendiente?.cancel()
         estabilizador?.reiniciar()
         estadoDeSesion.update {
             it.copy(
@@ -214,6 +274,7 @@ class PracticaViewModel @Inject constructor(
     }
 
     fun siguienteSena() {
+        reanudacionPendiente?.cancel()
         estabilizador?.reiniciar()
         estadoDeSesion.update {
             it.copy(
@@ -273,9 +334,15 @@ class PracticaViewModel @Inject constructor(
         val intentoConfirmado: Boolean = false,
     )
 
-    private companion object {
-        const val ETIQUETA = "Practica"
-        const val TIEMPO_DE_ESPERA_MS = 5_000L
+    companion object {
+        /**
+         * Suelo de lectura de la retroalimentación antes de reanudar sola. La pantalla parte de
+         * aquí para preguntarle al sistema el tiempo recomendado, que puede ser mayor.
+         */
+        const val ESPERA_POR_DEFECTO_MS = 1_200L
+
+        private const val ETIQUETA = "Practica"
+        private const val TIEMPO_DE_ESPERA_MS = 5_000L
     }
 }
 

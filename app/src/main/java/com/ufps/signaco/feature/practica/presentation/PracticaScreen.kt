@@ -3,7 +3,9 @@ package com.ufps.signaco.feature.practica.presentation
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +75,16 @@ fun PracticaScreen(
     viewModel: PracticaViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val contexto = LocalContext.current
+
+    // RNF-11: tras un fallo la captura se reanuda sola, y ese tiempo debe respetar el ajuste
+    // "tiempo para realizar una acción" del sistema. Se consulta aquí porque hace falta un
+    // Context, que no entra en el ViewModel.
+    LaunchedEffect(contexto) {
+        viewModel.ajustarEsperaDeReanudacion(
+            contexto.esperaRecomendadaParaLeer(PracticaViewModel.ESPERA_POR_DEFECTO_MS),
+        )
+    }
 
     SolicitarPermisoDeCamara(
         alResponder = viewModel::alResponderElPermiso,
@@ -513,4 +525,19 @@ private fun PracticaPreview() {
             onCambiarPistas = {},
         )
     }
+}
+
+/**
+ * Tiempo que el sistema recomienda dejar un texto en pantalla, partiendo de [base]. Devuelve
+ * más si la persona tiene subido el ajuste de accesibilidad "tiempo para realizar una acción".
+ * Por debajo de Android 10 esa API no existe y se usa [base] tal cual.
+ */
+private fun Context.esperaRecomendadaParaLeer(base: Long): Long {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return base
+    val gestor = getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+        ?: return base
+    return gestor.getRecommendedTimeoutMillis(
+        base.toInt(),
+        AccessibilityManager.FLAG_CONTENT_TEXT,
+    ).toLong()
 }

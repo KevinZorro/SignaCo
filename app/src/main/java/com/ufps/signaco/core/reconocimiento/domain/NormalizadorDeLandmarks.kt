@@ -87,35 +87,6 @@ object NormalizadorDeLandmarks {
     }
 
     /**
-     * DIAGNÓSTICO TEMPORAL. No forma parte de [normalizar] ni la modifica.
-     *
-     * MediaPipe no devuelve píxeles: devuelve `x` dividido entre el ANCHO de la imagen y `y`
-     * dividido entre el ALTO. Con una imagen cuadrada los dos ejes quedan en la misma unidad;
-     * con una imagen 3:4 el eje `y` sale comprimido un 25 % respecto a `x`. Trasladar a la
-     * muñeca y dividir por la norma máxima quita el tamaño, pero no quita esa deformación: el
-     * modelo vería una mano achatada en todos los frames.
-     *
-     * Esta función pasa `y` a unidades de ancho, que es lo que habría visto el entrenamiento si
-     * corrió sobre recortes cuadrados. `z` ya viene en la escala de `x` según MediaPipe, así que
-     * no se toca.
-     *
-     * Se aplica ANTES de [normalizar], sobre los valores crudos.
-     */
-    fun corregirRelacionDeAspecto(puntosCrudos: FloatArray, ancho: Int, alto: Int): FloatArray {
-        require(puntosCrudos.size == VALORES) {
-            "Se esperaban $VALORES valores y llegaron ${puntosCrudos.size}"
-        }
-        if (ancho <= 0 || alto <= 0 || ancho == alto) return puntosCrudos.copyOf()
-
-        val factor = alto.toFloat() / ancho.toFloat()
-        val salida = puntosCrudos.copyOf()
-        for (punto in 0 until PUNTOS) {
-            salida[punto * 3 + 1] = puntosCrudos[punto * 3 + 1] * factor
-        }
-        return salida
-    }
-
-    /**
      * Estadísticos por eje del vector normalizado. Sirven para detectar de un vistazo una
      * convención invertida: con la mano vertical y los dedos hacia arriba, los "y" normalizados
      * deben ser mayoritariamente NEGATIVOS, porque en MediaPipe la y de imagen crece hacia abajo.

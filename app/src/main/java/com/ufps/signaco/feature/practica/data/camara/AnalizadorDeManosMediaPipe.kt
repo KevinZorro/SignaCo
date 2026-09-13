@@ -12,15 +12,9 @@ import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
-import com.ufps.signaco.core.reconocimiento.data.DiagnosticoDeAspecto
 import com.ufps.signaco.core.reconocimiento.data.RegistroDeDepuracion
 import com.ufps.signaco.core.reconocimiento.domain.NormalizadorDeLandmarks
 import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /**
  * Extrae landmarks de mano con MediaPipe en modo LIVE_STREAM y los deja normalizados.
@@ -40,19 +34,10 @@ import kotlinx.coroutines.launch
 class AnalizadorDeManosMediaPipe(
     contexto: Context,
     private val registro: RegistroDeDepuracion,
-    /** Diagnóstico temporal de la relación de aspecto. Se quita junto con él. */
-    private val diagnostico: DiagnosticoDeAspecto,
     private val alDetectar: (FrameDeLandmarks) -> Unit,
 ) {
 
     private var inicioDeDeteccion: Long = 0
-
-    // Tamaño del bitmap que se le entregó a MediaPipe. El listener no lo recibe y el diagnóstico
-    // de aspecto lo necesita. Con STRATEGY_KEEP_ONLY_LATEST hay un frame en vuelo a la vez.
-    @Volatile private var anchoAnalizado: Int = 0
-    @Volatile private var altoAnalizado: Int = 0
-
-    private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val detector: HandLandmarker = try {
         val opcionesBase = BaseOptions.builder()
@@ -81,8 +66,6 @@ class AnalizadorDeManosMediaPipe(
     fun analizar(imagen: ImageProxy, esCamaraFrontal: Boolean) {
         try {
             val bitmap = aBitmap(imagen, esCamaraFrontal)
-            anchoAnalizado = bitmap.width
-            altoAnalizado = bitmap.height
             // Latido: una línea por segundo que demuestra que la cadena está viva. Un frame sin
             // mano no llega al clasificador, así que sin esto "MediaPipe no ve nada" y "el log no
             // funciona" se veían igual: silencio.
@@ -154,18 +137,6 @@ class AnalizadorDeManosMediaPipe(
             espejado = normalizados.espejado,
         )
 
-        // Diagnóstico temporal: pasa este mismo frame por el modelo con y sin corregir la
-        // relación de aspecto y anota cuál prefiere. No cambia lo que se le entrega a la app.
-        if (diagnostico.activo) {
-            val ancho = anchoAnalizado
-            val alto = altoAnalizado
-            alcance.launch {
-                runCatching {
-                    diagnostico.comparar(crudos, handedness == HANDEDNESS_IZQUIERDA, ancho, alto)
-                }.onFailure { Log.e(ETIQUETA, "El diagnóstico de aspecto falló", it) }
-            }
-        }
-
         alDetectar(
             FrameDeLandmarks(
                 landmarks = normalizados.valores,
@@ -176,7 +147,6 @@ class AnalizadorDeManosMediaPipe(
     }
 
     fun cerrar() {
-        alcance.cancel()
         runCatching { detector.close() }
     }
 
