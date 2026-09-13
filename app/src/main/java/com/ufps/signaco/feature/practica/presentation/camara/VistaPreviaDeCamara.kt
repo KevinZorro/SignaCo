@@ -84,7 +84,7 @@ fun VistaPreviaDeCamara(
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
             val previa = Preview.Builder().build()
-                .also { it.surfaceProvider = vistaPrevia.surfaceProvider }
+                .also { it.setSurfaceProvider(vistaPrevia.surfaceProvider) }
 
             proveedor.unbindAll()
             proveedor.bindToLifecycle(duenoDelCiclo, seleccion, previa, analisis)

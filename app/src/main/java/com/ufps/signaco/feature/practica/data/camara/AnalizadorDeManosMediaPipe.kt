@@ -3,6 +3,7 @@ package com.ufps.signaco.feature.practica.data.camara
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.google.mediapipe.framework.image.BitmapImageBuilder
@@ -67,7 +68,8 @@ class AnalizadorDeManosMediaPipe(
         try {
             val bitmap = aBitmap(imagen, esCamaraFrontal) ?: return
             inicioDeDeteccion = System.nanoTime()
-            detector.detectAsync(BitmapImageBuilder(bitmap).build(), imagen.imageInfo.timestamp)
+            // detectAsync exige milisegundos estrictamente crecientes.
+            detector.detectAsync(BitmapImageBuilder(bitmap).build(), SystemClock.uptimeMillis())
         } catch (e: Exception) {
             Log.e(ETIQUETA, "No se pudo analizar el frame", e)
         } finally {
