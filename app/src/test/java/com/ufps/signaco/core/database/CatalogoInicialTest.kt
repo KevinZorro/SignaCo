@@ -1,6 +1,7 @@
 package com.ufps.signaco.core.database
 
 import com.ufps.signaco.core.reconocimiento.domain.Alfabeto
+import com.ufps.signaco.core.reconocimiento.domain.VocabularioActivo
 import com.ufps.signaco.core.senas.domain.model.Categoria
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,17 +48,26 @@ class CatalogoInicialTest {
     }
 
     @Test
-    fun `hay cinco vocales`() {
+    fun `las cinco vocales siguen en el catalogo aunque la E no se practique`() {
         val vocales = CatalogoInicial.SENAS.filter { it.categoria == Categoria.VOCALES.name }
 
         assertEquals(listOf("A", "E", "I", "O", "U"), vocales.map { it.id })
     }
 
     @Test
-    fun `la enie es la unica sena fuera del vocabulario del MVP`() {
-        val noDisponibles = CatalogoInicial.SENAS.filterNot { it.disponible }
+    fun `la disponibilidad del catalogo coincide con el vocabulario activo`() {
+        val disponibles = CatalogoInicial.SENAS.filter { it.disponible }.map { it.id }.sorted()
 
-        assertEquals(listOf("NN"), noDisponibles.map { it.id })
+        assertEquals(VocabularioActivo.LETRAS.sorted(), disponibles)
+    }
+
+    @Test
+    fun `las senas excluidas siguen en el catalogo para el diccionario`() {
+        val ids = CatalogoInicial.SENAS.map { it.id }
+
+        VocabularioActivo.EXCLUIDAS.forEach { excluida ->
+            assertTrue("Falta $excluida en el catálogo", excluida in ids)
+        }
     }
 
     @Test
@@ -106,7 +116,18 @@ class CatalogoInicialTest {
     }
 
     @Test
-    fun `la enie no aparece en ninguna leccion`() {
-        assertFalse(CatalogoInicial.RELACIONES.any { it.senaId == "NN" })
+    fun `ninguna sena excluida aparece en una leccion`() {
+        val enLecciones = CatalogoInicial.RELACIONES.map { it.senaId }.toSet()
+
+        VocabularioActivo.EXCLUIDAS.forEach { excluida ->
+            assertFalse("$excluida no debería estar en una lección", excluida in enLecciones)
+        }
+    }
+
+    @Test
+    fun `cada leccion tiene entre 3 y 5 senas, como pide el RF01`() {
+        CatalogoInicial.RELACIONES.groupBy { it.leccionId }.forEach { (leccion, senas) ->
+            assertTrue("$leccion tiene ${senas.size} señas", senas.size in 3..5)
+        }
     }
 }

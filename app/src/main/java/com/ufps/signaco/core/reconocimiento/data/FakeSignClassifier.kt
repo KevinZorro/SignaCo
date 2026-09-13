@@ -1,7 +1,6 @@
 package com.ufps.signaco.core.reconocimiento.data
 
 import com.ufps.signaco.core.comun.DispatcherDefault
-import com.ufps.signaco.core.reconocimiento.domain.LandmarksSimulados
 import com.ufps.signaco.core.reconocimiento.domain.ResultadoClasificacion
 import com.ufps.signaco.core.reconocimiento.domain.SignClassifier
 import kotlinx.coroutines.CoroutineDispatcher

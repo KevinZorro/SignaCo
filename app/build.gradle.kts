@@ -36,6 +36,13 @@ android {
     }
     buildFeatures {
         compose = true
+        // Necesario para que RegistroDeDepuracion sepa si es una build de depuración.
+        buildConfig = true
+    }
+    androidResources {
+        // El .tflite y el .task se cargan con MappedByteBuffer directamente desde el APK.
+        // Si Gradle los comprime, el mapeo falla.
+        noCompress += listOf("tflite", "task")
     }
     testOptions {
         unitTests {
@@ -81,6 +88,14 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
+
+    // Cámara, visión e inferencia
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mediapipe.tasks.vision)
+    implementation(libs.tensorflow.lite)
 
     // Pruebas unitarias (capa domain)
     testImplementation(libs.junit)

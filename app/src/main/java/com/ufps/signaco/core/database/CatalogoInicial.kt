@@ -3,6 +3,7 @@ package com.ufps.signaco.core.database
 import com.ufps.signaco.core.database.entity.LeccionEntity
 import com.ufps.signaco.core.database.entity.LeccionSenaCrossRef
 import com.ufps.signaco.core.database.entity.SenaEntity
+import com.ufps.signaco.core.reconocimiento.domain.VocabularioActivo
 import com.ufps.signaco.core.senas.domain.model.Categoria
 
 /**
@@ -12,8 +13,12 @@ import com.ufps.signaco.core.senas.domain.model.Categoria
  * Las descripciones son texto de trabajo: hay que validarlas con material de LSC antes de
  * la entrega. La estructura sirve tal cual; el texto se reemplaza sin tocar codigo.
  *
- * La enie ("NN") esta en el catalogo pero con disponible = false y no pertenece a ninguna
- * leccion: quedo fuera del vocabulario del MVP por variacion regional en el dataset LSC70.
+ * Las 27 letras estan en el catalogo, pero solo las 19 de
+ * [VocabularioActivo] se practican. La disponibilidad NO se escribe a mano aqui: se deriva de
+ * VocabularioActivo, que es la unica fuente de verdad, para que el catalogo y el filtrado del
+ * clasificador no puedan separarse.
+ *
+ * Las excluidas siguen visibles en el diccionario y no pertenecen a ninguna leccion.
  */
 object CatalogoInicial {
 
@@ -45,7 +50,7 @@ object CatalogoInicial {
             descripcion = "Como la N con un trazo ondulado encima. Fuera del vocabulario del MVP.",
             categoria = Categoria.CONSONANTES.name,
             orden = 15,
-            disponible = false,
+            disponible = VocabularioActivo.estaActiva("NN"),
         ),
         vocal("O", 16, "Todos los dedos curvados tocando el pulgar, formando un círculo."),
         consonante("P", 17, "Como la K pero con la mano girada hacia abajo."),
@@ -65,46 +70,46 @@ object CatalogoInicial {
         LeccionEntity(
             id = LECCION_VOCALES,
             titulo = "Vocales",
-            descripcion = "Las cinco vocales. El mejor punto de partida: son las señas más estables.",
+            descripcion = "Las vocales del vocabulario. El mejor punto de partida: son las señas más estables.",
             categoria = Categoria.VOCALES.name,
             orden = 1,
         ),
         LeccionEntity(
             id = LECCION_CONSONANTES_1,
-            titulo = "Consonantes B a G",
+            titulo = "Consonantes B, D, F y G",
             descripcion = "Primer grupo de consonantes, con manos abiertas y curvas amplias.",
             categoria = Categoria.CONSONANTES.name,
             orden = 2,
         ),
         LeccionEntity(
             id = LECCION_CONSONANTES_2,
-            titulo = "Consonantes H a M",
-            descripcion = "Segundo grupo. La H exige separar bien los dedos para no confundirla.",
+            titulo = "Consonantes J, L, P y Q",
+            descripcion = "Segundo grupo, con las manos que apuntan hacia el lado.",
             categoria = Categoria.CONSONANTES.name,
             orden = 3,
         ),
         LeccionEntity(
             id = LECCION_CONSONANTES_3,
-            titulo = "Consonantes N a S",
+            titulo = "Consonantes R, S, T y V",
             descripcion = "Tercer grupo. La R pide cruzar los dedos con claridad.",
             categoria = Categoria.CONSONANTES.name,
             orden = 4,
         ),
         LeccionEntity(
             id = LECCION_CONSONANTES_4,
-            titulo = "Consonantes T a Z",
-            descripcion = "Último grupo de consonantes para cerrar el abecedario.",
+            titulo = "Consonantes W, X e Y",
+            descripcion = "Último grupo de consonantes del vocabulario.",
             categoria = Categoria.CONSONANTES.name,
             orden = 5,
         ),
     )
 
     val RELACIONES: List<LeccionSenaCrossRef> =
-        relacionar(LECCION_VOCALES, "A", "E", "I", "O", "U") +
-            relacionar(LECCION_CONSONANTES_1, "B", "C", "D", "F", "G") +
-            relacionar(LECCION_CONSONANTES_2, "H", "J", "K", "L", "M") +
-            relacionar(LECCION_CONSONANTES_3, "N", "P", "Q", "R", "S") +
-            relacionar(LECCION_CONSONANTES_4, "T", "V", "W", "X", "Y", "Z")
+        relacionar(LECCION_VOCALES, "A", "I", "O", "U") +
+            relacionar(LECCION_CONSONANTES_1, "B", "D", "F", "G") +
+            relacionar(LECCION_CONSONANTES_2, "J", "L", "P", "Q") +
+            relacionar(LECCION_CONSONANTES_3, "R", "S", "T", "V") +
+            relacionar(LECCION_CONSONANTES_4, "W", "X", "Y")
 
     private fun vocal(letra: String, orden: Int, descripcion: String) =
         SenaEntity(
@@ -114,7 +119,7 @@ object CatalogoInicial {
             descripcion = descripcion,
             categoria = Categoria.VOCALES.name,
             orden = orden,
-            disponible = true,
+            disponible = VocabularioActivo.estaActiva(letra),
         )
 
     private fun consonante(letra: String, orden: Int, descripcion: String) =
@@ -125,7 +130,7 @@ object CatalogoInicial {
             descripcion = descripcion,
             categoria = Categoria.CONSONANTES.name,
             orden = orden,
-            disponible = true,
+            disponible = VocabularioActivo.estaActiva(letra),
         )
 
     private fun relacionar(leccionId: String, vararg senaIds: String) =
