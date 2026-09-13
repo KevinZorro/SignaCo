@@ -83,13 +83,23 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # El emulador falló al arrancar dos veces seguidas sin llegar a ejecutar ninguna prueba.
+      # Dejar constancia del disco libre: quedarse sin espacio es una causa clásica y, si vuelve
+      # a pasar, este dato dice si va por ahí o no.
+      - name: Espacio en disco antes del emulador
+        run: df -h /
+
       - name: Correr las pruebas instrumentadas
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
-          target: google_apis
+          # Imagen "default" en vez de "google_apis": las pruebas son de Room y SQLite y no usan
+          # nada de los servicios de Google. La imagen es más pequeña de descargar y más liviana
+          # de arrancar, que es justo donde está fallando.
+          target: default
           arch: x86_64
           disable-animations: true
+          emulator-boot-timeout: 900
           script: ./gradlew connectedDebugAndroidTest
 
       - name: Guardar reportes

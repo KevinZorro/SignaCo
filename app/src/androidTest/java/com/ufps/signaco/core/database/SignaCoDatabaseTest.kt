@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ufps.signaco.core.database.entity.LeccionCompletadaEntity
 import com.ufps.signaco.core.database.entity.RachaEntity
+import com.ufps.signaco.core.database.entity.SenaEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -94,10 +95,7 @@ class SignaCoDatabaseTest {
             .first()
 
         assertNotNull(leccion)
-        assertEquals(
-            listOf("A", "E", "I", "O", "U"),
-            leccion!!.senas.sortedBy { it.orden }.map { it.id },
-        )
+        assertEquals(senasEsperadasDe(CatalogoInicial.LECCION_VOCALES), leccion!!.senas.aIds())
     }
 
     @Test
@@ -188,15 +186,27 @@ class SignaCoDatabaseTest {
         assertEquals(27, base.senaDao().contarSenas())
         assertEquals(5, base.leccionDao().contarLecciones())
         assertEquals(
-            listOf("A", "E", "I", "O", "U"),
+            senasEsperadasDe(CatalogoInicial.LECCION_VOCALES),
             base.leccionDao()
                 .observarLeccionConSenas(CatalogoInicial.LECCION_VOCALES)
                 .first()!!
                 .senas
-                .sortedBy { it.orden }
-                .map { it.id },
+                .aIds(),
         )
     }
+
+    /**
+     * La expectativa se deriva del propio catálogo en vez de escribirse a mano: así, cuando
+     * cambie el vocabulario, lo que se comprueba sigue siendo que Room devuelve la relación
+     * correcta, y no una lista de letras que hay que acordarse de actualizar.
+     */
+    private fun senasEsperadasDe(leccionId: String): List<String> =
+        CatalogoInicial.RELACIONES
+            .filter { it.leccionId == leccionId }
+            .map { it.senaId }
+            .sortedBy { id -> CatalogoInicial.SENAS.first { it.id == id }.orden }
+
+    private fun List<SenaEntity>.aIds(): List<String> = sortedBy { it.orden }.map { it.id }
 
     private companion object {
         const val TIEMPO_MAXIMO_MS = 10_000L
