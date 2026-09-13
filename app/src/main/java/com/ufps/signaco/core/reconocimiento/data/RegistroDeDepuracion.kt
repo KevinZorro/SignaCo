@@ -24,6 +24,11 @@ class RegistroDeDepuracion @Inject constructor() {
 
     private var contadorDeFrames = 0L
 
+    private var framesDeCamara = 0
+    private var framesConMano = 0
+    private var framesSinMano = 0
+    private var ultimoLatido = 0L
+
     /** Volcado único al arrancar: dice si el modelo y la config existen y qué formas espera. */
     fun registrarArranque(
         origenDelModelo: String,
@@ -33,20 +38,68 @@ class RegistroDeDepuracion @Inject constructor() {
         configuracion: ConfiguracionDeReconocimiento,
     ) {
         if (!activo) return
-        Log.d(ETIQUETA, "============== SIGNACO: ARRANQUE DEL CLASIFICADOR ==============")
-        Log.d(ETIQUETA, "Modelo               : $origenDelModelo")
-        Log.d(ETIQUETA, "Tensor entrada       : $formaDeEntrada")
-        Log.d(ETIQUETA, "Tensor salida        : $formaDeSalida")
-        Log.d(ETIQUETA, "Config               : $origenDeLaConfig")
-        Log.d(ETIQUETA, "Etiquetas (${configuracion.etiquetas.size})     : ${configuracion.etiquetas}")
-        Log.d(ETIQUETA, "Total de clases      : ${configuracion.totalDeClases}")
-        Log.d(ETIQUETA, "indice_rechazo       : ${configuracion.indiceDeRechazo}")
-        Log.d(ETIQUETA, "umbral_global        : ${configuracion.umbralGlobal}")
-        Log.d(ETIQUETA, "umbral_por_letra (${configuracion.umbralPorLetra.size}): ${configuracion.umbralPorLetra}")
-        Log.d(ETIQUETA, "k (suavizado)        : ${configuracion.k}")
-        Log.d(ETIQUETA, "Vocabulario activo (${VocabularioActivo.LETRAS.size}): ${VocabularioActivo.LETRAS}")
-        Log.d(ETIQUETA, "Excluidas (${VocabularioActivo.EXCLUIDAS.size})        : ${VocabularioActivo.EXCLUIDAS}")
-        Log.d(ETIQUETA, "===============================================================")
+        Log.i(ETIQUETA, "============== SIGNACO: ARRANQUE DEL CLASIFICADOR ==============")
+        Log.i(ETIQUETA, "Modelo               : $origenDelModelo")
+        Log.i(ETIQUETA, "Tensor entrada       : $formaDeEntrada")
+        Log.i(ETIQUETA, "Tensor salida        : $formaDeSalida")
+        Log.i(ETIQUETA, "Config               : $origenDeLaConfig")
+        Log.i(ETIQUETA, "Etiquetas (${configuracion.etiquetas.size})     : ${configuracion.etiquetas}")
+        Log.i(ETIQUETA, "Total de clases      : ${configuracion.totalDeClases}")
+        Log.i(ETIQUETA, "indice_rechazo       : ${configuracion.indiceDeRechazo}")
+        Log.i(ETIQUETA, "umbral_global        : ${configuracion.umbralGlobal}")
+        Log.i(ETIQUETA, "umbral_por_letra (${configuracion.umbralPorLetra.size}): ${configuracion.umbralPorLetra}")
+        Log.i(ETIQUETA, "k (suavizado)        : ${configuracion.k}")
+        Log.i(ETIQUETA, "Vocabulario activo (${VocabularioActivo.LETRAS.size}): ${VocabularioActivo.LETRAS}")
+        Log.i(ETIQUETA, "Excluidas (${VocabularioActivo.EXCLUIDAS.size})        : ${VocabularioActivo.EXCLUIDAS}")
+        Log.i(ETIQUETA, "===============================================================")
+    }
+
+    /**
+     * LATIDO. Una línea por segundo que demuestra que la cadena está viva, aunque MediaPipe no
+     * vea ninguna mano.
+     *
+     * Sin esto, "no detecta la mano" y "el log no funciona" se veían exactamente igual: silencio.
+     * Un frame sin mano no llegaba al clasificador, así que no se registraba nada en absoluto.
+     *
+     * Se llama desde el analizador en CADA frame que entrega la cámara, así que sigue latiendo
+     * aunque MediaPipe deje de invocar su listener.
+     */
+    fun registrarFrameDeCamara(ancho: Int, alto: Int, rotacion: Int) {
+        if (!activo) return
+        framesDeCamara++
+        val ahora = System.currentTimeMillis()
+        if (ultimoLatido == 0L) {
+            ultimoLatido = ahora
+            return
+        }
+        val transcurrido = ahora - ultimoLatido
+        if (transcurrido < MILISEGUNDOS_ENTRE_LATIDOS) return
+
+        val aviso = when {
+            framesConMano == 0 && framesSinMano == 0 ->
+                "  <- MediaPipe no está devolviendo NINGÚN resultado: mira el error de arriba"
+            framesConMano == 0 ->
+                "  <- MediaPipe no ve ninguna mano: acércala, mejora la luz, o revisa la cámara"
+            else -> ""
+        }
+        Log.i(
+            ETIQUETA,
+            "[LATIDO] %.1f frames/s de cámara | imagen %dx%d rot=%d | MediaPipe: %d con mano, %d sin mano%s"
+                .format(
+                    framesDeCamara * 1000f / transcurrido, ancho, alto, rotacion,
+                    framesConMano, framesSinMano, aviso,
+                ),
+        )
+        ultimoLatido = ahora
+        framesDeCamara = 0
+        framesConMano = 0
+        framesSinMano = 0
+    }
+
+    /** Lo llama el analizador con cada resultado de MediaPipe, haya mano o no. */
+    fun registrarResultadoDeMediaPipe(huboMano: Boolean) {
+        if (!activo) return
+        if (huboMano) framesConMano++ else framesSinMano++
     }
 
     @Suppress("LongParameterList")
@@ -228,5 +281,6 @@ class RegistroDeDepuracion @Inject constructor() {
 
     private companion object {
         const val ETIQUETA = "SignaCO_Debug"
+        const val MILISEGUNDOS_ENTRE_LATIDOS = 1000L
     }
 }

@@ -83,6 +83,14 @@ class AnalizadorDeManosMediaPipe(
             val bitmap = aBitmap(imagen, esCamaraFrontal)
             anchoAnalizado = bitmap.width
             altoAnalizado = bitmap.height
+            // Latido: una línea por segundo que demuestra que la cadena está viva. Un frame sin
+            // mano no llega al clasificador, así que sin esto "MediaPipe no ve nada" y "el log no
+            // funciona" se veían igual: silencio.
+            registro.registrarFrameDeCamara(
+                ancho = bitmap.width,
+                alto = bitmap.height,
+                rotacion = imagen.imageInfo.rotationDegrees,
+            )
             inicioDeDeteccion = System.nanoTime()
             // detectAsync exige milisegundos estrictamente crecientes.
             detector.detectAsync(BitmapImageBuilder(bitmap).build(), SystemClock.uptimeMillis())
@@ -117,9 +125,11 @@ class AnalizadorDeManosMediaPipe(
         val puntos = resultado.landmarks().firstOrNull()
 
         if (puntos.isNullOrEmpty() || puntos.size != NormalizadorDeLandmarks.PUNTOS) {
+            registro.registrarResultadoDeMediaPipe(huboMano = false)
             alDetectar(FrameDeLandmarks.SIN_MANO)
             return
         }
+        registro.registrarResultadoDeMediaPipe(huboMano = true)
 
         val categoria = resultado.handedness().firstOrNull()?.firstOrNull()
         val handedness = categoria?.categoryName() ?: "Right"
