@@ -12,9 +12,15 @@ import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import com.ufps.signaco.core.reconocimiento.data.DiagnosticoDeAspecto
 import com.ufps.signaco.core.reconocimiento.data.RegistroDeDepuracion
 import com.ufps.signaco.core.reconocimiento.domain.NormalizadorDeLandmarks
 import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Extrae landmarks de mano con MediaPipe en modo LIVE_STREAM y los deja normalizados.
@@ -34,11 +40,19 @@ import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
 class AnalizadorDeManosMediaPipe(
     contexto: Context,
     private val registro: RegistroDeDepuracion,
+    /** Diagnóstico temporal de la relación de aspecto. Se quita junto con él. */
+    private val diagnostico: DiagnosticoDeAspecto,
     private val alDetectar: (FrameDeLandmarks) -> Unit,
 ) {
 
-    private var bitmapReutilizable: Bitmap? = null
     private var inicioDeDeteccion: Long = 0
+
+    // Tamaño del bitmap que se le entregó a MediaPipe. El listener no lo recibe y el diagnóstico
+    // de aspecto lo necesita. Con STRATEGY_KEEP_ONLY_LATEST hay un frame en vuelo a la vez.
+    @Volatile private var anchoAnalizado: Int = 0
+    @Volatile private var altoAnalizado: Int = 0
+
+    private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val detector: HandLandmarker = try {
         val opcionesBase = BaseOptions.builder()
@@ -66,7 +80,9 @@ class AnalizadorDeManosMediaPipe(
     /** Se llama desde el hilo del ImageAnalysis de CameraX. Cierra el [imagen] siempre. */
     fun analizar(imagen: ImageProxy, esCamaraFrontal: Boolean) {
         try {
-            val bitmap = aBitmap(imagen, esCamaraFrontal) ?: return
+            val bitmap = aBitmap(imagen, esCamaraFrontal)
+            anchoAnalizado = bitmap.width
+            altoAnalizado = bitmap.height
             inicioDeDeteccion = System.nanoTime()
             // detectAsync exige milisegundos estrictamente crecientes.
             detector.detectAsync(BitmapImageBuilder(bitmap).build(), SystemClock.uptimeMillis())
@@ -77,21 +93,22 @@ class AnalizadorDeManosMediaPipe(
         }
     }
 
-    private fun aBitmap(imagen: ImageProxy, esCamaraFrontal: Boolean): Bitmap? {
-        val destino = bitmapReutilizable
-            ?: Bitmap.createBitmap(imagen.width, imagen.height, Bitmap.Config.ARGB_8888)
-                .also { bitmapReutilizable = it }
-        if (destino.width != imagen.width || destino.height != imagen.height) return null
-
-        imagen.planes.firstOrNull()?.buffer?.let { destino.copyPixelsFromBuffer(it) } ?: return null
-
+    /**
+     * Antes esto copiaba el plano 0 con copyPixelsFromBuffer sobre un bitmap reutilizado. Eso da
+     * por supuesto que cada fila ocupa exactamente ancho x 4 bytes, y CameraX puede añadir
+     * relleno al final de cada fila según el dispositivo. Cuando lo añade, la imagen le llega a
+     * MediaPipe inclinada, sin que salte ninguna excepción, y la detección se va al traste solo
+     * en algunos teléfonos. toBitmap() de CameraX respeta el rowStride.
+     */
+    private fun aBitmap(imagen: ImageProxy, esCamaraFrontal: Boolean): Bitmap {
+        val origen = imagen.toBitmap()
         val transformacion = Matrix().apply {
             postRotate(imagen.imageInfo.rotationDegrees.toFloat())
             // El espejado que MediaPipe da por supuesto en la cámara frontal.
-            if (esCamaraFrontal) postScale(-1f, 1f, imagen.width / 2f, imagen.height / 2f)
+            if (esCamaraFrontal) postScale(-1f, 1f, origen.width / 2f, origen.height / 2f)
         }
         return Bitmap.createBitmap(
-            destino, 0, 0, imagen.width, imagen.height, transformacion, true,
+            origen, 0, 0, origen.width, origen.height, transformacion, true,
         )
     }
 
@@ -127,6 +144,18 @@ class AnalizadorDeManosMediaPipe(
             espejado = normalizados.espejado,
         )
 
+        // Diagnóstico temporal: pasa este mismo frame por el modelo con y sin corregir la
+        // relación de aspecto y anota cuál prefiere. No cambia lo que se le entrega a la app.
+        if (diagnostico.activo) {
+            val ancho = anchoAnalizado
+            val alto = altoAnalizado
+            alcance.launch {
+                runCatching {
+                    diagnostico.comparar(crudos, handedness == HANDEDNESS_IZQUIERDA, ancho, alto)
+                }.onFailure { Log.e(ETIQUETA, "El diagnóstico de aspecto falló", it) }
+            }
+        }
+
         alDetectar(
             FrameDeLandmarks(
                 landmarks = normalizados.valores,
@@ -137,8 +166,8 @@ class AnalizadorDeManosMediaPipe(
     }
 
     fun cerrar() {
+        alcance.cancel()
         runCatching { detector.close() }
-        bitmapReutilizable = null
     }
 
     private companion object {

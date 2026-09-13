@@ -1,6 +1,7 @@
 package com.ufps.signaco.core.reconocimiento
 
 import com.ufps.signaco.core.reconocimiento.domain.NormalizadorDeLandmarks
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -116,5 +117,55 @@ class NormalizadorDeLandmarksTest {
         assertTrue(texto.contains("y["))
         assertTrue(texto.contains("maxAbs="))
         assertTrue(normalizados.valores.filterIndexed { i, _ -> i % 3 == 1 }.any { abs(it) > 0f })
+    }
+
+    @Test
+    fun `corregir el aspecto solo escala la y y la deja en unidades de ancho`() {
+        val crudos = manoDePrueba(Triple(0.8f, 0.2f, 0.05f))
+
+        val corregidos = NormalizadorDeLandmarks
+            .corregirRelacionDeAspecto(crudos, ancho = 480, alto = 640)
+
+        // x y z intactos, y multiplicada por alto/ancho = 1.333...
+        assertEquals(crudos[3], corregidos[3], 1e-6f)
+        assertEquals(crudos[5], corregidos[5], 1e-6f)
+        assertEquals(crudos[4] * 640f / 480f, corregidos[4], 1e-6f)
+        assertEquals(crudos[1] * 640f / 480f, corregidos[1], 1e-6f)
+    }
+
+    @Test
+    fun `corregir el aspecto no hace nada si la imagen ya es cuadrada`() {
+        val crudos = manoDePrueba(Triple(0.8f, 0.2f, 0.05f))
+
+        val corregidos = NormalizadorDeLandmarks
+            .corregirRelacionDeAspecto(crudos, ancho = 512, alto = 512)
+
+        assertArrayEquals(crudos, corregidos, 1e-6f)
+    }
+
+    @Test
+    fun `corregir el aspecto no toca el arreglo original`() {
+        val crudos = manoDePrueba(Triple(0.8f, 0.2f, 0.05f))
+        val copia = crudos.copyOf()
+
+        NormalizadorDeLandmarks.corregirRelacionDeAspecto(crudos, ancho = 480, alto = 640)
+
+        assertArrayEquals(copia, crudos, 0f)
+    }
+
+    @Test
+    fun `corregir el aspecto cambia la forma que ve el modelo, no solo el tamaño`() {
+        // El punto de la prueba: trasladar a la muñeca y dividir por la norma máxima quita el
+        // TAMAÑO, no la deformación. Si fuera solo tamaño, los dos vectores normalizados
+        // saldrían iguales y la corrección no serviría de nada.
+        val crudos = manoDePrueba(Triple(0.8f, 0.2f, 0f), Triple(0.2f, 0.9f, 0f))
+
+        val tal = NormalizadorDeLandmarks.normalizar(crudos, esManoIzquierda = false).valores
+        val corregido = NormalizadorDeLandmarks.normalizar(
+            NormalizadorDeLandmarks.corregirRelacionDeAspecto(crudos, ancho = 480, alto = 640),
+            esManoIzquierda = false,
+        ).valores
+
+        assertTrue(tal.indices.any { abs(tal[it] - corregido[it]) > 1e-3f })
     }
 }
