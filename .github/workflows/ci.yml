@@ -1,11 +1,24 @@
 name: CI
 
+# Una sola verificación por cambio.
+#
+# Antes corría tres veces por el mismo código: una por el pull request de la rama, otra por el
+# pull request de vuelta desde master, y otra por el push a master al mergear. GitHub ya prueba
+# el RESULTADO de la mezcla en el evento pull_request, así que volver a correr todo en el push a
+# master es repetir el mismo trabajo con el mismo árbol.
+#
+# Queda así:
+#   - pull_request      -> compila, prueba y analiza. Es la verificación que bloquea el merge.
+#   - push a master     -> lo mismo, para no dejar sin red un push directo, más el emulador.
+#   - workflow_dispatch -> a mano, desde la pestaña Actions.
+#
+# Para sincronizar la rama con master NO abras un pull request de master hacia la rama: eso
+# dispara una verificación extra. Usa el botón "Update branch" del propio pull request, o en
+# local `git merge master`.
 on:
-  # En ramas con pull request abierto basta con el evento pull_request: si además se
-  # escuchara cada push, cada commit dispararia dos veces el mismo trabajo.
-  push:
-    branches: [master, main]
   pull_request:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -34,14 +47,10 @@ jobs:
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Compilar la app
-        run: ./gradlew assembleDebug
-
-      - name: Pruebas unitarias
-        run: ./gradlew testDebugUnitTest
-
-      - name: Analisis estatico (Android Lint)
-        run: ./gradlew lintDebug
+      # Las tres tareas en UNA invocación. Separadas, Gradle arrancaba y configuraba el proyecto
+      # tres veces seguidas para el mismo árbol. Juntas comparten configuración y caché de tareas.
+      - name: Compilar, probar y analizar
+        run: ./gradlew assembleDebug testDebugUnitTest lintDebug
 
       - name: Guardar reportes
         if: always()
@@ -58,6 +67,10 @@ jobs:
     name: Pruebas de base de datos en emulador
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # El emulador es lo más lento del pipeline y lo que comprueba casi no cambia: que Room
+    # ejecute sus consultas y precargue el catálogo contra un SQLite de verdad. En cada push a
+    # una rama no aporta; en master sí, antes de dar por buena la integración.
+    if: github.event_name != 'pull_request'
 
     steps:
       - name: Descargar el repositorio
