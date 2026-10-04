@@ -148,3 +148,5 @@ No empieces extensiones antes de que el núcleo esté funcional y probado.
 - Antes de reescribir código que ya funciona, pregunta.
 - Si una decisión tiene alternativas razonables, propón y espera, no elijas por tu cuenta.
 - Prefiere código simple sobre código clever. Es un proyecto académico que cuatro estudiantes tienen que poder explicar en una sustentación.
+
+El encargo de interfaz está en docs/diseno/brief-ui.md y hay que leerlo antes de tocar la UI.
