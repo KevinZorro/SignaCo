@@ -38,7 +38,7 @@ La meta es el nivel de acabado de iOS y de HyperOS de Xiaomi, que se nota en el 
 - Íconos con el mismo trazo y el mismo tamaño (24 dp), convertidos a vector drawables.
 - Movimiento corto y con propósito, entre 150 y 250 ms, con curvas de desaceleración y sin rebotes. Al acertar, el sello entra con una sola animación y una vibración corta.
 - Cada componente con sus estados de presionado, deshabilitado, cargando y vacío.
-- PROPUESTA, PENDIENTE DE APROBACIÓN. Estas son las piezas que hoy resaltan demasiado frente a las reglas anteriores, cada una con la forma en que debe quedar (el número es el del frame en Figma y en docs/diseno/pantallas/):
+- Estas son las piezas que hoy resaltan demasiado frente a las reglas anteriores, cada una con la forma en que debe quedar (el número es el del frame en Figma y en docs/diseno/pantallas/):
   - En el catálogo (02), la tarjeta «Saludos básicos» lleva todo el fondo en Resaltador. Debe quedar sobre Papel como las demás filas, con el amarillo solo en el cuadro de progreso de la seña en curso o en un subrayado corto, y con «Seguir» en Tinta.
   - En la barra de navegación (02, 10, 11 y 12), la pestaña activa se marca con una píldora amarilla, de modo que el amarillo señala navegación y no aprendizaje. El indicador debe ser una superficie tonal derivada de Tinta, con el ícono y la etiqueta en Tinta.
   - La ilustración del permiso (01), las miniaturas de las señas (03 y 11), la tarjeta del puntaje del quiz (09), la tarjeta de teoría (12), el área del clip de «Lección detalle de seña» y el esquema de «reconocimiento_mano» llevan cuadrícula y borde. Deben ir sobre una superficie tonal lisa y sin borde, porque la cuadrícula queda reservada al cuaderno de progreso (10) y a la tarjeta de la palabra (04 a 08).
