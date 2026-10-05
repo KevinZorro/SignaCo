@@ -30,6 +30,7 @@ import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
+import com.ufps.signaco.core.ui.theme.fuenteGrande
 
 /**
  * Una lección del catálogo. La lección en curso no cambia de fondo: se distingue por el
@@ -55,7 +56,8 @@ fun FilaDeLeccion(
             .semantics(mergeDescendants = true) {}
             .padding(vertical = Espacio.md),
     ) {
-        FilaDeCuadros(estados = estados, descripcionAccesible = descripcionDelAvance)
+        val apilado = fuenteGrande
+        if (!apilado) FilaDeCuadros(estados = estados, descripcionAccesible = descripcionDelAvance)
         Column(
             verticalArrangement = Arrangement.spacedBy(Espacio.xxs),
             modifier = Modifier.weight(1f),
@@ -70,9 +72,18 @@ fun FilaDeLeccion(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (apilado) {
+                FilaDeCuadros(
+                    estados = estados,
+                    descripcionAccesible = descripcionDelAvance,
+                    modifier = Modifier.padding(top = Espacio.xs),
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (enCurso) {
+            // Con fuente grande «Seguir» no cabe junto al título: queda solo la flecha, y la
+            // descripción del avance ya anuncia que la lección está en curso.
+            if (enCurso && !apilado) {
                 Text(
                     text = stringResource(R.string.catalogo_seguir),
                     style = MaterialTheme.typography.titleMedium,

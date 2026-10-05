@@ -52,6 +52,7 @@ import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
+import com.ufps.signaco.core.ui.theme.fuenteGrande
 import com.ufps.signaco.core.ui.theme.signaCoColores
 import com.ufps.signaco.feature.lecciones.domain.model.Leccion
 import com.ufps.signaco.feature.lecciones.domain.model.LeccionConProgreso
@@ -197,17 +198,16 @@ private fun Cuaderno(uiState: ProgresoUiState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        val apilado = fuenteGrande
         uiState.lecciones.forEach { leccion ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Espacio.md),
-            ) {
+            val titulo = @Composable {
                 Text(
                     text = leccion.leccion.titulo,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
                 )
+            }
+            val cuadros = @Composable {
                 FilaDeCuadros(
                     estados = leccion.senas.map { it.progreso.estado.aCuadro() },
                     descripcionAccesible = stringResource(
@@ -217,6 +217,20 @@ private fun Cuaderno(uiState: ProgresoUiState) {
                     ),
                     lado = Medida.cuadroDelCuaderno,
                 )
+            }
+            if (apilado) {
+                Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                    titulo()
+                    cuadros()
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Espacio.md),
+                ) {
+                    Box(Modifier.weight(1f)) { titulo() }
+                    cuadros()
+                }
             }
         }
         LeyendaDeProgreso(etiquetaEnCurso = stringResource(R.string.leyenda_practicada))

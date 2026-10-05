@@ -90,6 +90,15 @@ fun SignaCoTheme(
     }
 }
 
+/**
+ * Con la fuente por encima del 130 % las filas con contenido a los lados apilan sus partes,
+ * para que los nombres no se corten a mitad de palabra (RNF-11).
+ */
+val fuenteGrande: Boolean
+    @Composable get() = LocalDensity.current.fontScale > ESCALA_DE_FUENTE_GRANDE
+
+private const val ESCALA_DE_FUENTE_GRANDE = 1.3f
+
 /** Acceso corto a los colores propios desde cualquier Composable. */
 val MaterialTheme.signaCoColores: SignaCoColores
     @Composable get() = LocalSignaCoColores.current

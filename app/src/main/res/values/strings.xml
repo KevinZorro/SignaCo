@@ -56,23 +56,13 @@ La cámara viene en el siguiente paso.</string>
     <string name="cd_esquema_dedos">Esquema de una mano abierta con los nombres de los dedos: pulgar, índice, medio, anular y meñique.</string>
 
     <!-- Práctica -->
-    <string name="practica_titulo">Práctica</string>
-    <string name="practica_sena_objetivo">Practica la letra %1$s</string>
-    <string name="practica_estado_esperando">Cuando estés listo, haz la seña</string>
     <string name="practica_estado_reconociendo">Reconociendo…</string>
-    <string name="practica_estado_acierto">Acertaste la letra %1$s, con %2$d %% de confianza</string>
     <string name="practica_estado_otra_letra">Detectamos la letra %1$s, no la %2$s</string>
-    <string name="practica_estado_no_reconocida">No reconocimos esa seña. Intenta de nuevo.</string>
-    <string name="practica_estado_sin_mano">No vemos tu mano en el recuadro</string>
     <string name="practica_siguiente">Siguiente seña</string>
     <string name="practica_terminar">Terminar y hacer el quiz</string>
-    <string name="practica_aciertos_sesion">Aciertos en esta sesión: %1$d</string>
     <string name="practica_mostrar_pistas">Mostrar la descripción de la seña</string>
     <string name="practica_sin_senas">Esta lección no tiene señas para practicar.</string>
     <string name="practica_estado_buscando_manos">Buscando tu mano</string>
-    <string name="practica_estado_sin_deteccion">Captura detenida</string>
-    <string name="practica_iniciar_captura">Iniciar captura</string>
-    <string name="practica_detener_captura">Detener captura</string>
     <string name="practica_cambiar_camara">Cambiar de cámara</string>
     <string name="practica_reintentar_sena">Reintentar esta seña</string>
     <string name="practica_sena_de">Seña %1$d de %2$d</string>
