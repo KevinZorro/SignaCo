@@ -46,15 +46,15 @@ fun CuadroDeProgreso(
     val colores = MaterialTheme.signaCoColores
     val base = modifier
         .size(lado)
-        .clip(Forma.pieza)
+        .clip(Forma.cuadro)
     val cuadro = when (estado) {
         EstadoDeCuadro.DOMINADA -> base.background(MaterialTheme.colorScheme.primary)
         EstadoDeCuadro.EN_CURSO -> base
             .background(colores.resaltador)
-            .border(Medida.trazoFino, MaterialTheme.colorScheme.onSurface, Forma.pieza)
+            .border(Medida.trazoFino, MaterialTheme.colorScheme.onSurface, Forma.cuadro)
         EstadoDeCuadro.POR_APRENDER -> base
             .background(MaterialTheme.colorScheme.surface)
-            .border(Medida.trazoFino, colores.borde, Forma.pieza)
+            .border(Medida.trazoFino, colores.borde, Forma.cuadro)
     }
     Box(cuadro)
 }
@@ -101,7 +101,7 @@ private fun ElementoDeLeyenda(estado: EstadoDeCuadro, texto: String) {
         CuadroDeProgreso(estado)
         Text(
             text = texto,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

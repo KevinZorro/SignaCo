@@ -10,4 +10,7 @@ data class CatalogoLeccionesUiState(
     val cargando: Boolean = true,
     val hayError: Boolean = false,
     val categorias: List<CategoriaConLecciones> = emptyList(),
+    val senasDominadas: Int = 0,
+    val senasDisponibles: Int = 0,
+    val diasDeRacha: Int = 0,
 )

@@ -121,9 +121,11 @@ fun EsquemaDeMano(
             .padding(Espacio.lg)
             .semantics { contentDescription = descripcion },
     ) {
-        // La mano ocupa un cuadrado centrado para no deformarse con el ancho.
-        val lado = size.minDimension
-        val origen = Offset((size.width - lado) / 2f, (size.height - lado) / 2f)
+        // La mano ocupa un cuadrado centrado para no deformarse con el ancho. Con etiquetas se
+        // achica y baja un poco para dejar sitio a los nombres encima de los dedos.
+        val reduccion = if (etiquetas.isEmpty()) 1f else ESCALA_CON_ETIQUETAS
+        val lado = size.minDimension * reduccion
+        val origen = Offset((size.width - lado) / 2f, size.height - lado)
         val ubicados = ubicarPuntos(puntos, lado, lado, espejar).map { it + origen }
         dibujarMano(ubicados, estilo)
 
@@ -131,7 +133,11 @@ fun EsquemaDeMano(
             dibujarEtiqueta(
                 yema = ubicados[YEMAS[dedo]],
                 nombre = nombre,
-                haciaLaIzquierda = (dedo < 2) != espejar,
+                direccion = when {
+                    dedo == DEDO_MEDIO -> 0
+                    (dedo < DEDO_MEDIO) != espejar -> -1
+                    else -> 1
+                },
                 color = colorDeEtiqueta,
                 medir = { medidor.measure(it, estiloDeEtiqueta) },
             )
@@ -139,22 +145,30 @@ fun EsquemaDeMano(
     }
 }
 
+/** @param direccion -1 lleva el nombre arriba a la izquierda, 0 arriba y 1 arriba a la derecha. */
 private fun DrawScope.dibujarEtiqueta(
     yema: Offset,
     nombre: String,
-    haciaLaIzquierda: Boolean,
+    direccion: Int,
     color: Color,
     medir: (String) -> TextLayoutResult,
 ) {
     val texto = medir(nombre)
-    val separacion = 20.dp.toPx()
-    val anclaX = if (haciaLaIzquierda) yema.x - separacion else yema.x + separacion
-    val ancla = Offset(anclaX, yema.y - separacion)
+    val separacion = 16.dp.toPx()
+    val ancla = Offset(yema.x + direccion * separacion, yema.y - separacion)
     drawLine(color, yema, ancla, 1.dp.toPx())
-    val x = if (haciaLaIzquierda) ancla.x - texto.size.width else ancla.x
+    val x = when (direccion) {
+        -1 -> ancla.x - texto.size.width
+        0 -> ancla.x - texto.size.width / 2f
+        else -> ancla.x
+    }
     val y = ancla.y - texto.size.height
-    drawText(texto, topLeft = Offset(x.coerceAtLeast(0f), y.coerceAtLeast(0f)))
+    val maximoX = (size.width - texto.size.width).coerceAtLeast(0f)
+    drawText(texto, topLeft = Offset(x.coerceIn(0f, maximoX), y.coerceAtLeast(0f)))
 }
+
+private const val DEDO_MEDIO = 2
+private const val ESCALA_CON_ETIQUETAS = 0.82f
 
 @Preview(showBackground = true, widthDp = 360)
 @Composable

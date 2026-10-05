@@ -3,6 +3,7 @@ package com.ufps.signaco.feature.diccionario.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.feature.diccionario.domain.usecase.BuscarEnDiccionarioUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,16 +30,17 @@ class DiccionarioViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val consulta = MutableStateFlow("")
+    private val categoria = MutableStateFlow<Categoria?>(null)
     private val reintentos = MutableStateFlow(0)
 
     val uiState: StateFlow<DiccionarioUiState> =
-        combine(consulta, reintentos) { texto, _ -> texto }
-            .flatMapLatest { texto ->
-                buscarEnDiccionario(texto)
+        combine(consulta, categoria, reintentos) { texto, filtro, _ -> texto to filtro }
+            .flatMapLatest { (texto, filtro) ->
+                buscarEnDiccionario(texto, filtro)
                     .map { senas ->
-                        DiccionarioUiState(cargando = false, consulta = texto, senas = senas)
+                        DiccionarioUiState(cargando = false, consulta = texto, categoria = filtro, senas = senas)
                     }
-                    .onStart { emit(DiccionarioUiState(cargando = true, consulta = texto)) }
+                    .onStart { emit(DiccionarioUiState(cargando = true, consulta = texto, categoria = filtro)) }
                     .catch { error ->
                         Log.e(ETIQUETA, "No se pudo cargar el diccionario", error)
                         emit(
@@ -46,6 +48,7 @@ class DiccionarioViewModel @Inject constructor(
                                 cargando = false,
                                 hayError = true,
                                 consulta = texto,
+                                categoria = filtro,
                             ),
                         )
                     }
@@ -58,6 +61,10 @@ class DiccionarioViewModel @Inject constructor(
 
     fun cambiarConsulta(texto: String) {
         consulta.value = texto
+    }
+
+    fun cambiarCategoria(nueva: Categoria?) {
+        categoria.value = nueva
     }
 
     fun reintentar() {

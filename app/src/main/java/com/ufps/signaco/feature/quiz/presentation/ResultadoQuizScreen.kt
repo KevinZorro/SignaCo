@@ -2,140 +2,230 @@ package com.ufps.signaco.feature.quiz.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
-import com.ufps.signaco.core.ui.componentes.BarraDeAvance
+import com.ufps.signaco.core.senas.domain.model.Categoria
+import com.ufps.signaco.core.senas.domain.model.Sena
+import com.ufps.signaco.core.ui.componentes.BarraSuperior
+import com.ufps.signaco.core.ui.componentes.BotonDeTexto
+import com.ufps.signaco.core.ui.componentes.BotonPrincipal
+import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
+import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.componentes.Sello
+import com.ufps.signaco.core.ui.componentes.Separador
+import com.ufps.signaco.core.ui.theme.Espacio
+import com.ufps.signaco.core.ui.theme.EstiloNumero
+import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
-import com.ufps.signaco.feature.quiz.domain.model.ResultadoQuiz
-import kotlin.math.roundToInt
+import com.ufps.signaco.feature.quiz.domain.usecase.SenaCalificada
 
-/**
- * Pantalla de solo lectura: recibe el puntaje como argumento de navegación, así que no
- * necesita ViewModel. Guardar el resultado ya lo hizo el quiz.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultadoQuizScreen(
-    aciertos: Int,
-    total: Int,
     onRepetirQuiz: () -> Unit,
-    onVolverALecciones: () -> Unit,
+    onRepasar: (leccionId: String, senaId: String) -> Unit,
+    onVerProgreso: () -> Unit,
+    onCerrar: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ResultadoQuizViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ResultadoQuizContenido(
+        uiState = uiState,
+        onRepetirQuiz = onRepetirQuiz,
+        onRepasar = { senaId -> onRepasar(viewModel.leccionId, senaId) },
+        onVerProgreso = onVerProgreso,
+        onCerrar = onCerrar,
+        modifier = modifier,
+    )
+}
+
+/**
+ * El número y el sello van sobre fondo liso, sin tarjeta. «Repetir el quiz» es la única
+ * acción principal; ver el progreso queda como acción de texto.
+ */
+@Composable
+fun ResultadoQuizContenido(
+    uiState: ResultadoQuizUiState,
+    onRepetirQuiz: () -> Unit,
+    onRepasar: (String) -> Unit,
+    onVerProgreso: () -> Unit,
+    onCerrar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val resultado = ResultadoQuiz(aciertos = aciertos, total = total)
-    val porcentaje = (resultado.porcentaje * 100).roundToInt()
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.resultado_titulo)) }) },
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            BarraSuperior(
+                navegacion = Navegacion.CERRAR,
+                onNavegar = onCerrar,
+                titulo = if (uiState.tituloDeLeccion.isEmpty()) {
+                    stringResource(R.string.resultado_titulo)
+                } else {
+                    stringResource(R.string.resultado_titulo_quiz, uiState.tituloDeLeccion)
+                },
+            )
+        },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(horizontal = Espacio.margen, vertical = Espacio.md),
+            ) {
+                BotonPrincipal(
+                    texto = stringResource(R.string.resultado_repetir),
+                    onClick = onRepetirQuiz,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                BotonDeTexto(
+                    texto = stringResource(R.string.resultado_ver_progreso),
+                    onClick = onVerProgreso,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
     ) { relleno ->
-        Column(
+        if (uiState.cargando) {
+            EstadoDeCarga(Modifier.padding(relleno))
+            return@Scaffold
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = Espacio.margen, vertical = Espacio.md),
             modifier = Modifier
                 .padding(relleno)
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                .fillMaxSize(),
         ) {
-            Icon(
-                imageVector = if (resultado.aprobado) {
-                    Icons.Default.CheckCircle
-                } else {
-                    Icons.Default.Refresh
-                },
-                contentDescription = null,
-                tint = if (resultado.aprobado) {
-                    MaterialTheme.colorScheme.tertiary
-                } else {
-                    MaterialTheme.colorScheme.secondary
-                },
-                modifier = Modifier.size(64.dp),
-            )
-            Text(
-                text = if (resultado.aprobado) {
-                    stringResource(R.string.resultado_aprobado)
-                } else {
-                    stringResource(R.string.resultado_reprobado)
-                },
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-            Text(
-                text = stringResource(R.string.resultado_puntaje, aciertos, total),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            BarraDeAvance(
-                porcentaje = resultado.porcentaje,
-                descripcionAccesible = stringResource(R.string.comun_porcentaje, porcentaje),
-                modifier = Modifier.padding(top = 16.dp),
-            )
-            Text(
-                text = if (resultado.aprobado) {
-                    stringResource(R.string.resultado_detalle_aprobado)
-                } else {
-                    stringResource(R.string.resultado_detalle_reprobado)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-            Button(
-                onClick = onVolverALecciones,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .padding(top = 32.dp),
-            ) {
-                Text(stringResource(R.string.resultado_volver_lecciones))
+            item(key = "puntaje") { Puntaje(uiState) }
+            item(key = "detalle") {
+                Text(
+                    text = stringResource(
+                        if (uiState.aprobado) R.string.resultado_detalle_aprobado else R.string.resultado_detalle_reprobado,
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = Espacio.lg, bottom = Espacio.xs),
+                )
             }
-            OutlinedButton(
-                onClick = onRepetirQuiz,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .padding(top = 12.dp),
-            ) {
-                Text(stringResource(R.string.resultado_repetir))
+            itemsIndexed(items = uiState.senas, key = { _, it -> it.sena.id }) { indice, calificada ->
+                if (indice > 0) Separador()
+                FilaDeRespuesta(calificada = calificada, onRepasar = { onRepasar(calificada.sena.id) })
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+private fun Puntaje(uiState: ResultadoQuizUiState) {
+    val descripcion = stringResource(R.string.cd_resultado_puntaje, uiState.aciertos, uiState.total)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = descripcion },
+    ) {
+        Text(
+            text = uiState.aciertos.toString(),
+            style = EstiloNumero,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(R.string.resultado_de_total, uiState.total),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
+        )
+        // El sello premia el aprobado; con el quiz reprobado no se muestra.
+        if (uiState.aprobado) Sello()
+    }
+}
+
+@Composable
+private fun FilaDeRespuesta(calificada: SenaCalificada, onRepasar: () -> Unit) {
+    val estado = stringResource(if (calificada.acerto) R.string.cd_respuesta_acertada else R.string.cd_respuesta_fallada)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.md),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = Medida.areaTactil)
+            .padding(vertical = Espacio.sm),
+    ) {
+        Icon(
+            painter = painterResource(if (calificada.acerto) R.drawable.ic_check_circle else R.drawable.ic_cancel),
+            contentDescription = estado,
+            tint = if (calificada.acerto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = calificada.sena.nombre,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
+        )
+        when {
+            !calificada.acerto -> BotonDeTexto(
+                texto = stringResource(R.string.resultado_repasar),
+                onClick = onRepasar,
+            )
+            calificada.dominada -> Text(
+                text = stringResource(R.string.detalle_sena_dominada),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            else -> Text(
+                text = stringResource(R.string.resultado_acertada),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun ResultadoQuizPreview() {
+    fun sena(letra: String) = Sena(letra, letra, "Letra $letra", "", Categoria.CONSONANTES, 1, true)
     SignaCoTheme {
-        ResultadoQuizScreen(
-            aciertos = 4,
-            total = 5,
+        ResultadoQuizContenido(
+            uiState = ResultadoQuizUiState(
+                cargando = false,
+                aciertos = 4,
+                total = 5,
+                aprobado = true,
+                tituloDeLeccion = "Consonantes S, T, V, W, X y Y",
+                senas = listOf(
+                    SenaCalificada(sena("S"), acerto = true, dominada = false),
+                    SenaCalificada(sena("T"), acerto = true, dominada = true),
+                    SenaCalificada(sena("W"), acerto = false, dominada = false),
+                ),
+            ),
             onRepetirQuiz = {},
-            onVolverALecciones = {},
+            onRepasar = {},
+            onVerProgreso = {},
+            onCerrar = {},
         )
     }
 }

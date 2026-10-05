@@ -18,7 +18,22 @@ object Rutas {
     data object Progreso
 
     @Serializable
+    data object ConoceTuMano
+
+    @Serializable
+    data object Ajustes
+
+    @Serializable
+    data object TamanoYContraste
+
+    @Serializable
     data class DetalleLeccion(val leccionId: String)
+
+    @Serializable
+    data class DetalleSena(val leccionId: String, val senaId: String)
+
+    @Serializable
+    data class TeoriaSena(val senaId: String)
 
     /** @param senaInicial la seña con la que arranca; null empieza por la primera. */
     @Serializable
@@ -27,10 +42,13 @@ object Rutas {
     @Serializable
     data class Quiz(val leccionId: String)
 
+    /** @param senasDelQuiz en el orden en que se preguntaron; [senasFalladas] es un subconjunto. */
     @Serializable
     data class ResultadoQuiz(
         val leccionId: String,
         val aciertos: Int,
         val total: Int,
+        val senasDelQuiz: List<String> = emptyList(),
+        val senasFalladas: List<String> = emptyList(),
     )
 }
