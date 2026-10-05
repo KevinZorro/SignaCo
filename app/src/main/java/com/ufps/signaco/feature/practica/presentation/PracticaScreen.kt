@@ -71,6 +71,7 @@ import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Movimiento
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
+import com.ufps.signaco.core.ui.theme.fuenteGrande
 import com.ufps.signaco.core.ui.theme.signaCoColores
 import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
 import com.ufps.signaco.feature.practica.presentation.camara.CapaDeMano
@@ -271,7 +272,13 @@ private fun Practica(
             ) {
                 TarjetaDePalabra(
                     palabra = sena.nombre,
-                    indicacion = if (uiState.mostrarPistas) sena.descripcion else stringResource(R.string.practica_indicacion),
+                    // Con fuente grande la indicación genérica cede su sitio al visor; la descripción
+                    // de la seña, si la persona la pidió, se queda.
+                    indicacion = when {
+                        uiState.mostrarPistas -> sena.descripcion
+                        fuenteGrande -> null
+                        else -> stringResource(R.string.practica_indicacion)
+                    },
                 )
                 VisorDeCamara(
                     uiState = uiState,
@@ -370,15 +377,18 @@ private fun VisorDeCamara(
                 .padding(start = Espacio.lg, end = Espacio.lg, top = Espacio.xxl + Espacio.md, bottom = Espacio.lg)
                 .marcoDeCamara(colores.cuadricula),
         )
-        Pildora(uiState, resultado, Modifier.align(Alignment.TopStart).padding(Espacio.md))
-        if (resultado == Resultado.NINGUNO && uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO) {
-            PanelDeCoincidencia(
-                coincidencia = uiState.coincidencia,
-                umbral = uiState.umbral,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(Espacio.md),
-            )
+        // Píldora arriba y panel abajo en una columna: con la fuente grande el visor se achica
+        // y así nunca se montan uno sobre otro.
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(Espacio.md),
+        ) {
+            Pildora(uiState, resultado)
+            if (resultado == Resultado.NINGUNO && uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO) {
+                PanelDeCoincidencia(coincidencia = uiState.coincidencia, umbral = uiState.umbral)
+            }
         }
     }
 }
@@ -534,6 +544,19 @@ private fun ContenidoDeFallo(uiState: PracticaUiState, onReintentarSena: () -> U
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurface,
     )
+    // Si el modelo vio otra letra, la coincidencia con la seña objetivo es cero por definición:
+    // el título ya dice qué letra vio y el medidor no aportaría nada.
+    if (otraLetra == null) MedidorDelFallo(uiState)
+    BotonPrincipal(
+        texto = stringResource(R.string.practica_reintentar),
+        onClick = onReintentarSena,
+        icono = R.drawable.ic_refresh,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun MedidorDelFallo(uiState: PracticaUiState) {
     val porcentaje = (uiState.coincidencia * 100).roundToInt()
     val umbral = (uiState.umbral * 100).roundToInt()
     Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
@@ -551,12 +574,6 @@ private fun ContenidoDeFallo(uiState: PracticaUiState, onReintentarSena: () -> U
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    BotonPrincipal(
-        texto = stringResource(R.string.practica_reintentar),
-        onClick = onReintentarSena,
-        icono = R.drawable.ic_refresh,
-        modifier = Modifier.fillMaxWidth(),
-    )
 }
 
 private fun Context.abrirAjustesDeLaApp() {

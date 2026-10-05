@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -139,7 +140,14 @@ private fun Buscador(consulta: String, onCambiarConsulta: (String) -> Unit) {
     TextField(
         value = consulta,
         onValueChange = onCambiarConsulta,
-        placeholder = { Text(stringResource(R.string.diccionario_buscar), style = MaterialTheme.typography.bodyLarge) },
+        placeholder = {
+            Text(
+                text = stringResource(R.string.diccionario_buscar),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         singleLine = true,
         textStyle = MaterialTheme.typography.bodyLarge,
         shape = Forma.pildora,

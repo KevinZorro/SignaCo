@@ -43,11 +43,11 @@ fun Modifier.cuadriculado(color: Color, lado: Dp = Medida.ladoDeCuadricula): Mod
         }
     }
 
-/** La seña que se practica, escrita en el cuaderno. Sin borde exterior. */
+/** La seña que se practica, escrita en el cuaderno. Sin borde exterior. Sin [indicacion], solo la palabra. */
 @Composable
 fun TarjetaDePalabra(
     palabra: String,
-    indicacion: String,
+    indicacion: String?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -65,11 +65,13 @@ fun TarjetaDePalabra(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.semantics { heading() },
         )
-        Text(
-            text = indicacion,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (indicacion != null) {
+            Text(
+                text = indicacion,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
