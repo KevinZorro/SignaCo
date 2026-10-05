@@ -69,18 +69,46 @@ La cámara viene en el siguiente paso.</string>
     <string name="practica_aciertos_sesion">Aciertos en esta sesión: %1$d</string>
     <string name="practica_mostrar_pistas">Mostrar la descripción de la seña</string>
     <string name="practica_sin_senas">Esta lección no tiene señas para practicar.</string>
-    <string name="practica_estado_buscando_manos">Buscando tu mano…</string>
+    <string name="practica_estado_buscando_manos">Buscando tu mano</string>
     <string name="practica_estado_sin_deteccion">Captura detenida</string>
     <string name="practica_iniciar_captura">Iniciar captura</string>
     <string name="practica_detener_captura">Detener captura</string>
     <string name="practica_cambiar_camara">Cambiar de cámara</string>
     <string name="practica_reintentar_sena">Reintentar esta seña</string>
-    <string name="practica_estabilidad">Manteniendo la seña: %1$d de %2$d</string>
+    <string name="practica_sena_de">Seña %1$d de %2$d</string>
+    <string name="practica_indicacion">Haz esta seña frente a la cámara</string>
+    <string name="practica_camara_lista">Cámara lista</string>
+    <string name="practica_sena_confirmada">Seña confirmada</string>
+    <string name="practica_sin_coincidencia">Sin coincidencia</string>
+    <string name="practica_coincidencia">Coincidencia</string>
+    <string name="practica_porcentaje">%1$d %%</string>
+    <string name="practica_umbral">Se confirma desde el %1$d %%</string>
+    <string name="practica_iniciar_intento">Iniciar intento</string>
+    <string name="practica_detener">Detener</string>
+    <string name="practica_acertaste">¡Acertaste!</string>
+    <string name="practica_acierto_detalle">%1$s, con %2$d %% de coincidencia.</string>
+    <string name="practica_no_reconocimos">No reconocimos la seña</string>
+    <string name="practica_consejo">Acerca la mano al recuadro y mantén la seña quieta un segundo.</string>
+    <string name="practica_coincidencia_necesaria">%1$d %% de coincidencia. Se necesita %2$d %%.</string>
+    <string name="practica_reintentar">Reintentar</string>
+    <string name="cd_coincidencia">Coincidencia de %1$d por ciento. Se confirma desde el %2$d por ciento.</string>
+    <string name="cd_progreso_sesion">Seña %1$d de %2$d</string>
 
     <!-- Permiso de cámara -->
-    <string name="practica_permiso_titulo">SignaCo necesita la cámara</string>
-    <string name="practica_permiso_explicacion">La cámara se usa solo para reconocer tus señas en el dispositivo. No se graba ni se envía nada.</string>
-    <string name="practica_permiso_conceder">Permitir la cámara</string>
+    <string name="practica_permiso_titulo">Practica frente a la cámara</string>
+    <string name="practica_permiso_explicacion">Para corregir tus señas, SignaCO necesita ver tus manos mientras practicas.</string>
+    <string name="practica_permiso_conceder">Permitir cámara</string>
+    <string name="practica_permiso_ahora_no">Ahora no</string>
+    <string name="practica_permiso_nota">Puedes cambiar el permiso cuando quieras en los ajustes de Android.</string>
+    <string name="practica_permiso_puntos">21 puntos.</string>
+    <string name="practica_permiso_puntos_detalle">Es todo lo que la app lee de tu mano.</string>
+    <string name="practica_permiso_telefono">Todo se procesa en tu teléfono</string>
+    <string name="practica_permiso_telefono_detalle">El video nunca sale del dispositivo.</string>
+    <string name="practica_permiso_video">No se guarda ningún video</string>
+    <string name="practica_permiso_video_detalle">Solo se leen los puntos de tu mano, cuadro a cuadro.</string>
+    <string name="practica_permiso_conexion">Funciona sin conexión</string>
+    <string name="practica_permiso_conexion_detalle">No necesitas internet para practicar.</string>
+    <string name="cd_esquema_puntos">Esquema de los 21 puntos de una mano que lee la app.</string>
     <string name="practica_permiso_ajustes">Abrir los ajustes de la app</string>
 
     <!-- Fallos del reconocimiento -->

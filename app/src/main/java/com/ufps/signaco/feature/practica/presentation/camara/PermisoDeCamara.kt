@@ -12,17 +12,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
 /**
- * Pide el permiso de cámara una sola vez al entrar y avisa del resultado.
+ * Prepara la solicitud del permiso de cámara y devuelve la función que la lanza.
  *
- * Si el usuario lo deniega no se cierra nada (RNF-13): la pantalla muestra un mensaje que
- * explica para qué hace falta y un botón para volver a pedirlo. Cuando el sistema ya no muestra
- * el diálogo por haberlo denegado dos veces, ese botón lleva a los ajustes de la app.
+ * El diálogo del sistema ya no sale solo al entrar: antes se explica para qué hace falta la
+ * cámara y la persona decide con «Permitir cámara». Si el permiso ya estaba concedido, se avisa
+ * de inmediato y la explicación no se muestra.
+ *
+ * Si el usuario lo deniega no se cierra nada (RNF-13): la pantalla lo dice y deja volver a
+ * pedirlo. Cuando el sistema ya no muestra el diálogo por haberlo denegado dos veces, queda el
+ * camino de los ajustes de la app.
  */
 @Composable
-fun SolicitarPermisoDeCamara(
-    alResponder: (Boolean) -> Unit,
-    solicitar: Boolean,
-) {
+fun rememberSolicitudDePermisoDeCamara(alResponder: (Boolean) -> Unit): () -> Unit {
     val contexto = LocalContext.current
     val yaConcedido = remember(contexto) { contexto.tienePermisoDeCamara() }
 
@@ -31,12 +32,10 @@ fun SolicitarPermisoDeCamara(
         onResult = alResponder,
     )
 
-    LaunchedEffect(solicitar, yaConcedido) {
-        when {
-            yaConcedido -> alResponder(true)
-            solicitar -> lanzador.launch(Manifest.permission.CAMERA)
-        }
+    LaunchedEffect(yaConcedido) {
+        if (yaConcedido) alResponder(true)
     }
+    return { lanzador.launch(Manifest.permission.CAMERA) }
 }
 
 fun Context.tienePermisoDeCamara(): Boolean =

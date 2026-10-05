@@ -233,6 +233,7 @@ class PracticaViewModel @Inject constructor(
                     EstadoDeReconocimiento.SIN_DETECCION
                 },
                 retroalimentacion = EstadoDeRetroalimentacion.Esperando,
+                puntosDeMano = FloatArray(0),
             )
         }
     }
@@ -297,6 +298,7 @@ class PracticaViewModel @Inject constructor(
                 indice = uiState.value.indiceActual + 1,
                 intentoConfirmado = false,
                 avance = 0,
+                puntosDeMano = FloatArray(0),
                 retroalimentacion = EstadoDeRetroalimentacion.Esperando,
                 estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
             )
