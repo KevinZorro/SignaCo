@@ -43,6 +43,10 @@ jobs:
 
       - name: Instalar el SDK de Android
         uses: android-actions/setup-android@v3
+        with:
+          # Por defecto instala también 'tools', que el SDK ya retiró y hace fallar el paso.
+          # Lo demás (plataforma y build-tools) lo descarga Gradle cuando lo necesita.
+          packages: 'platform-tools'
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -84,6 +88,10 @@ jobs:
 
       - name: Instalar el SDK de Android
         uses: android-actions/setup-android@v3
+        with:
+          # Por defecto instala también 'tools', que el SDK ya retiró y hace fallar el paso.
+          # Lo demás (plataforma y build-tools) lo descarga Gradle cuando lo necesita.
+          packages: 'platform-tools'
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
