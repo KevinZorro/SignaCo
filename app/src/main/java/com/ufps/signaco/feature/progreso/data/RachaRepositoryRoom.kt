@@ -1,6 +1,7 @@
 package com.ufps.signaco.feature.progreso.data
 
 import com.ufps.signaco.core.database.dao.RachaDao
+import com.ufps.signaco.core.database.entity.ActividadDiariaEntity
 import com.ufps.signaco.core.database.entity.RachaEntity
 import com.ufps.signaco.feature.progreso.domain.RachaRepository
 import com.ufps.signaco.feature.progreso.domain.model.Racha
@@ -28,6 +29,13 @@ class RachaRepositoryRoom @Inject constructor(
             ),
         )
     }
+
+    override suspend fun registrarDiaActivo(dia: Long) {
+        rachaDao.registrarDia(ActividadDiariaEntity(dia))
+    }
+
+    override fun observarDiasActivosDesde(dia: Long): Flow<Set<Long>> =
+        rachaDao.observarDiasDesde(dia).map { it.toSet() }
 }
 
 private fun RachaEntity.aDominio() = Racha(

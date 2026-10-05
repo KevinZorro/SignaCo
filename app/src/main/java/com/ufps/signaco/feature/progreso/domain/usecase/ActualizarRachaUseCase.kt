@@ -24,6 +24,7 @@ class ActualizarRachaUseCase @Inject constructor(
         val actual = rachaRepository.obtenerRacha()
         if (actual.ultimoDiaActivo == hoy) return actual
 
+        rachaRepository.registrarDiaActivo(hoy)
         val dias = if (actual.ultimoDiaActivo == hoy - 1) actual.diasConsecutivos + 1 else 1
         val actualizada = Racha(
             diasConsecutivos = dias,

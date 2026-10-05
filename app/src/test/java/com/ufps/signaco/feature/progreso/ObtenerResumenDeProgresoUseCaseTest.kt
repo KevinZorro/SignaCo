@@ -4,9 +4,11 @@ import app.cash.turbine.test
 import com.ufps.signaco.fakes.FakeProgresoRepository
 import com.ufps.signaco.fakes.FakeRachaRepository
 import com.ufps.signaco.fakes.FakeSenaRepository
+import com.ufps.signaco.fakes.RelojFijo
 import com.ufps.signaco.fakes.senaDePrueba
 import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 import com.ufps.signaco.feature.progreso.domain.model.Racha
+import com.ufps.signaco.feature.progreso.domain.model.ResumenProgreso
 import com.ufps.signaco.feature.progreso.domain.usecase.ObtenerResumenDeProgresoUseCase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -27,6 +29,7 @@ class ObtenerResumenDeProgresoUseCaseTest {
             senaRepository = FakeSenaRepository(senas),
             progresoRepository = FakeProgresoRepository(),
             rachaRepository = FakeRachaRepository(),
+            reloj = RelojFijo(dia = 100),
         )
 
         val resumen = caso().first()
@@ -48,6 +51,7 @@ class ObtenerResumenDeProgresoUseCaseTest {
             rachaRepository = FakeRachaRepository(
                 Racha(diasConsecutivos = 4, mejorRacha = 9, ultimoDiaActivo = 100),
             ),
+            reloj = RelojFijo(dia = 100),
         )
 
         val resumen = caso().first()
@@ -67,6 +71,7 @@ class ObtenerResumenDeProgresoUseCaseTest {
                 progresoInicial = listOf(ProgresoSena("A", intentos = 2, aciertos = 1)),
             ),
             rachaRepository = FakeRachaRepository(),
+            reloj = RelojFijo(dia = 100),
         )
 
         val resumen = caso().first()
@@ -81,6 +86,7 @@ class ObtenerResumenDeProgresoUseCaseTest {
             senaRepository = FakeSenaRepository(senas),
             progresoRepository = progreso,
             rachaRepository = FakeRachaRepository(),
+            reloj = RelojFijo(dia = 100),
         )
 
         caso().test {
@@ -91,5 +97,32 @@ class ObtenerResumenDeProgresoUseCaseTest {
             assertEquals(1, awaitItem().avancePorSena.size)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `el lunes de la semana se calcula desde el jueves 1 de enero de 1970`() {
+        // Dia 0 fue jueves: su lunes es el dia -3. El dia 4 fue lunes.
+        assertEquals(-3L, ResumenProgreso.lunesDeLaSemana(0))
+        assertEquals(4L, ResumenProgreso.lunesDeLaSemana(4))
+        assertEquals(4L, ResumenProgreso.lunesDeLaSemana(10))
+    }
+
+    @Test
+    fun `marca los dias activos de la semana actual de lunes a domingo`() = runTest {
+        // Dia 104 es miercoles (lunes = 102). El 90 es de otra semana y no cuenta.
+        val racha = FakeRachaRepository().apply { diasActivos.value = setOf(90L, 102L, 103L, 107L) }
+        val caso = ObtenerResumenDeProgresoUseCase(
+            senaRepository = FakeSenaRepository(senas),
+            progresoRepository = FakeProgresoRepository(),
+            rachaRepository = racha,
+            reloj = RelojFijo(dia = 104),
+        )
+
+        val resumen = caso().first()
+
+        assertEquals(
+            listOf(true, true, false, false, false, true, false),
+            resumen.actividadDeLaSemana,
+        )
     }
 }

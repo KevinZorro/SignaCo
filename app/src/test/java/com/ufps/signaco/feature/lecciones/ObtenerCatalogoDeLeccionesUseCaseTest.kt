@@ -5,6 +5,7 @@ import com.ufps.signaco.fakes.FakeLeccionRepository
 import com.ufps.signaco.fakes.FakeProgresoRepository
 import com.ufps.signaco.fakes.leccionDePrueba
 import com.ufps.signaco.fakes.senaDePrueba
+import com.ufps.signaco.feature.lecciones.domain.model.CategoriaConLecciones
 import com.ufps.signaco.feature.lecciones.domain.usecase.CombinarLeccionConProgresoUseCase
 import com.ufps.signaco.feature.lecciones.domain.usecase.ObtenerCatalogoDeLeccionesUseCase
 import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
@@ -81,5 +82,35 @@ class ObtenerCatalogoDeLeccionesUseCaseTest {
 
         assertTrue(catalogo.first().lecciones.single().completada)
         assertFalse(catalogo.last().lecciones.single().completada)
+    }
+
+    private fun enCurso(catalogo: List<CategoriaConLecciones>): List<String> =
+        catalogo.flatMap { it.lecciones }.filter { it.enCurso }.map { it.leccion.id }
+
+    @Test
+    fun `sin progreso la leccion en curso es la primera`() = runTest {
+        val catalogo = crearCaso(FakeProgresoRepository()).invoke().first()
+
+        assertEquals(listOf("vocales"), enCurso(catalogo))
+    }
+
+    @Test
+    fun `la leccion en curso es la primera empezada y sin completar`() = runTest {
+        val progreso = FakeProgresoRepository(
+            progresoInicial = listOf(ProgresoSena("B", intentos = 2, aciertos = 1)),
+        )
+
+        val catalogo = crearCaso(progreso).invoke().first()
+
+        assertEquals(listOf("consonantes"), enCurso(catalogo))
+    }
+
+    @Test
+    fun `si todas estan completas no hay leccion en curso`() = runTest {
+        val progreso = FakeProgresoRepository(completadasIniciales = setOf("vocales", "consonantes"))
+
+        val catalogo = crearCaso(progreso).invoke().first()
+
+        assertTrue(enCurso(catalogo).isEmpty())
     }
 }

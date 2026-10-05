@@ -38,9 +38,10 @@ class ProcesarFrameUseCase @Inject constructor(
             )
         }
 
-        val clave = when (val clasificacion = clasificador.clasificar(frame.landmarks)) {
+        val clasificacion = clasificador.clasificar(frame.landmarks)
+        val clave = when (clasificacion) {
             is ResultadoClasificacion.LetraReconocida -> clasificacion.letra
-            ResultadoClasificacion.SenaNoReconocida ->
+            is ResultadoClasificacion.SenaNoReconocida ->
                 EstabilizadorDePredicciones.CLAVE_NO_RECONOCIDA
             ResultadoClasificacion.ManoNoDetectada -> {
                 estabilizador.reiniciar()
@@ -51,18 +52,33 @@ class ProcesarFrameUseCase @Inject constructor(
                 )
             }
         }
+        val coincidencia = coincidenciaCon(senaObjetivo, clasificacion)
 
         val confirmada = estabilizador.registrar(clave)
             ?: return ResultadoDeFrame.Buscando(
                 estado = EstadoDeReconocimiento.RECONOCIENDO,
                 avance = estabilizador.avance,
                 total = estabilizador.k,
+                coincidencia = coincidencia,
             )
 
         if (confirmada == EstabilizadorDePredicciones.CLAVE_NO_RECONOCIDA) {
-            return ResultadoDeFrame.NoReconocidaEstable
+            return ResultadoDeFrame.NoReconocidaEstable(coincidencia)
         }
 
         return ResultadoDeFrame.Confirmado(evaluarIntento(senaObjetivo, frame.landmarks))
     }
+
+    /**
+     * Cuánto se parece el frame a la seña que se practica. Si el modelo ve otra letra, la
+     * coincidencia con la objetivo es cero: su probabilidad no está en el resultado.
+     */
+    private fun coincidenciaCon(senaObjetivo: String, clasificacion: ResultadoClasificacion): Float =
+        when (clasificacion) {
+            is ResultadoClasificacion.LetraReconocida ->
+                if (clasificacion.letra == senaObjetivo) clasificacion.confianza else 0f
+            is ResultadoClasificacion.SenaNoReconocida ->
+                if (clasificacion.candidata == senaObjetivo) clasificacion.confianza else 0f
+            ResultadoClasificacion.ManoNoDetectada -> 0f
+        }
 }

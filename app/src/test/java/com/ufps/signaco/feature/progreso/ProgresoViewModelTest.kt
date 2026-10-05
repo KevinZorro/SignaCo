@@ -4,6 +4,7 @@ import com.ufps.signaco.core.senas.domain.SenaRepository
 import com.ufps.signaco.fakes.FakeProgresoRepository
 import com.ufps.signaco.fakes.FakeRachaRepository
 import com.ufps.signaco.fakes.FakeSenaRepository
+import com.ufps.signaco.fakes.RelojFijo
 import com.ufps.signaco.fakes.ReglaDeDispatcherPrincipal
 import com.ufps.signaco.fakes.SenaRepositoryQueFalla
 import com.ufps.signaco.fakes.senaDePrueba
@@ -37,6 +38,7 @@ class ProgresoViewModelTest {
             rachaRepository = FakeRachaRepository(
                 Racha(diasConsecutivos = 2, mejorRacha = 6, ultimoDiaActivo = 100),
             ),
+            reloj = RelojFijo(dia = 100),
         ),
     )
 
