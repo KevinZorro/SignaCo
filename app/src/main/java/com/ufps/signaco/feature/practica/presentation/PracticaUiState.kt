@@ -57,6 +57,14 @@ data class PracticaUiState(
     val errorDelReconocimiento: ErrorDeReconocimiento? = null,
     /** Queda en true tras confirmar un intento, hasta que el usuario avance o reintente. */
     val intentoConfirmado: Boolean = false,
+    /** Coincidencia del último frame con la seña objetivo, entre 0 y 1. */
+    val coincidencia: Float = 0f,
+    /** Umbral de la seña actual, de config_rechazo.json. */
+    val umbral: Float = 0f,
+    /** 21 puntos (x, y) sobre la imagen de la cámara, para dibujar la mano. Vacío si no hay mano. */
+    val puntosDeMano: FloatArray = FloatArray(0),
+    val proporcionDeImagen: Float = 0f,
+    val reducirAnimaciones: Boolean = false,
 ) {
     val senaActual: Sena? get() = senas.getOrNull(indiceActual)
 

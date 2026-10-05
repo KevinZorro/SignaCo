@@ -65,7 +65,7 @@ class ProcesarFrameUseCaseTest {
         val primero = caso("A", frameConMano, estabilizador)
 
         assertEquals(
-            ResultadoDeFrame.Buscando(EstadoDeReconocimiento.RECONOCIENDO, 1, 3),
+            ResultadoDeFrame.Buscando(EstadoDeReconocimiento.RECONOCIENDO, 1, 3, coincidencia = 0.9f),
             primero,
         )
         assertTrue(progreso.intentosRegistrados.isEmpty())
@@ -102,12 +102,12 @@ class ProcesarFrameUseCaseTest {
 
     @Test
     fun `el no reconocida se estabiliza para no parpadear pero no cuenta como intento`() = runTest {
-        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida()
 
         repeat(2) { caso("A", frameConMano, estabilizador) }
         val resultado = caso("A", frameConMano, estabilizador)
 
-        assertEquals(ResultadoDeFrame.NoReconocidaEstable, resultado)
+        assertTrue(resultado is ResultadoDeFrame.NoReconocidaEstable)
         assertTrue(progreso.intentosRegistrados.isEmpty())
     }
 
@@ -119,5 +119,33 @@ class ProcesarFrameUseCaseTest {
 
         assertTrue(resultado is ResultadoDeFrame.Buscando)
         assertTrue(progreso.intentosRegistrados.isEmpty())
+    }
+
+    @Test
+    fun `la coincidencia es la confianza cuando el modelo ve la sena objetivo`() = runTest {
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.41f)
+
+        val resultado = caso("A", frameConMano, estabilizador)
+
+        assertEquals(0.41f, (resultado as ResultadoDeFrame.Buscando).coincidencia, 0.0001f)
+    }
+
+    @Test
+    fun `si el modelo ve otra letra la coincidencia con la objetivo es cero`() = runTest {
+        clasificador.siguienteResultado = ResultadoClasificacion.LetraReconocida("S", 0.88f)
+
+        val resultado = caso("A", frameConMano, estabilizador)
+
+        assertEquals(0f, (resultado as ResultadoDeFrame.Buscando).coincidencia, 0.0001f)
+    }
+
+    @Test
+    fun `el no reconocida estable conserva la coincidencia del ultimo frame`() = runTest {
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.3f)
+
+        repeat(2) { caso("A", frameConMano, estabilizador) }
+        val resultado = caso("A", frameConMano, estabilizador)
+
+        assertEquals(0.3f, (resultado as ResultadoDeFrame.NoReconocidaEstable).coincidencia, 0.0001f)
     }
 }

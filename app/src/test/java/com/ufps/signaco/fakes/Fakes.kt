@@ -78,6 +78,11 @@ class FakeProgresoRepository(
     ) {
         completadas.value = completadas.value + leccionId
     }
+
+    override suspend fun borrarTodo() {
+        progreso.value = emptyList()
+        completadas.value = emptySet()
+    }
 }
 
 class FakeRachaRepository(inicial: Racha = Racha.INICIAL) : RachaRepository {
@@ -87,6 +92,15 @@ class FakeRachaRepository(inicial: Racha = Racha.INICIAL) : RachaRepository {
     override suspend fun guardarRacha(racha: Racha) {
         this.racha.value = racha
     }
+
+    val diasActivos = MutableStateFlow<Set<Long>>(emptySet())
+
+    override suspend fun registrarDiaActivo(dia: Long) {
+        diasActivos.value = diasActivos.value + dia
+    }
+
+    override fun observarDiasActivosDesde(dia: Long): Flow<Set<Long>> =
+        diasActivos.map { dias -> dias.filter { it >= dia }.toSet() }
 }
 
 /** Clasificador programable: devuelve lo que la prueba le diga, sin retardo. */

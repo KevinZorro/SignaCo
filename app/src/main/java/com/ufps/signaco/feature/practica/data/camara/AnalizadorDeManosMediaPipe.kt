@@ -39,6 +39,10 @@ class AnalizadorDeManosMediaPipe(
 
     private var inicioDeDeteccion: Long = 0
 
+    /** Del último bitmap enviado a MediaPipe. Lo lee el callback, que llega en otro hilo. */
+    @Volatile
+    private var proporcionDeImagen: Float = 0f
+
     private val detector: HandLandmarker = try {
         val opcionesBase = BaseOptions.builder()
             .setModelAssetPath(MODELO)
@@ -74,6 +78,7 @@ class AnalizadorDeManosMediaPipe(
                 alto = bitmap.height,
                 rotacion = imagen.imageInfo.rotationDegrees,
             )
+            proporcionDeImagen = bitmap.width.toFloat() / bitmap.height
             inicioDeDeteccion = System.nanoTime()
             // detectAsync exige milisegundos estrictamente crecientes.
             detector.detectAsync(BitmapImageBuilder(bitmap).build(), SystemClock.uptimeMillis())
@@ -118,10 +123,13 @@ class AnalizadorDeManosMediaPipe(
         val handedness = categoria?.categoryName() ?: "Right"
 
         val crudos = FloatArray(NormalizadorDeLandmarks.VALORES)
+        val enImagen = FloatArray(NormalizadorDeLandmarks.PUNTOS * 2)
         puntos.forEachIndexed { indice, punto ->
             crudos[indice * 3] = punto.x()
             crudos[indice * 3 + 1] = punto.y()
             crudos[indice * 3 + 2] = punto.z()
+            enImagen[indice * 2] = punto.x()
+            enImagen[indice * 2 + 1] = punto.y()
         }
 
         val normalizados = NormalizadorDeLandmarks.normalizar(
@@ -142,6 +150,8 @@ class AnalizadorDeManosMediaPipe(
                 landmarks = normalizados.valores,
                 handedness = handedness,
                 milisegundosDeDeteccion = milisegundos,
+                puntosEnImagen = enImagen,
+                proporcionDeImagen = proporcionDeImagen,
             ),
         )
     }

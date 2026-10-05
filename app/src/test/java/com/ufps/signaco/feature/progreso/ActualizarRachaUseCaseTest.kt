@@ -83,4 +83,13 @@ class ActualizarRachaUseCaseTest {
         assertEquals(42L, repositorio.racha.value.ultimoDiaActivo)
         assertEquals(1, repositorio.racha.value.diasConsecutivos)
     }
+
+    @Test
+    fun `la actividad deja marcado el dia para la racha semanal`() = runTest {
+        val repositorio = FakeRachaRepository(Racha.INICIAL)
+
+        ActualizarRachaUseCase(repositorio, RelojFijo(dia = 100)).invoke()
+
+        assertEquals(setOf(100L), repositorio.diasActivos.value)
+    }
 }

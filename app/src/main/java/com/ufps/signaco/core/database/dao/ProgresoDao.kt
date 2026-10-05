@@ -51,4 +51,28 @@ abstract class ProgresoDao {
         incrementoDeAciertos: Int,
         momentoEnMillis: Long,
     )
+
+    /**
+     * Borra todo lo que el usuario lleva: intentos, lecciones aprobadas, racha y días activos.
+     * En una sola transacción para que no quede un progreso a medias si algo falla.
+     */
+    @Transaction
+    open suspend fun borrarTodo() {
+        borrarIntentos()
+        borrarLeccionesCompletadas()
+        borrarRacha()
+        borrarActividad()
+    }
+
+    @Query("DELETE FROM progreso_senas")
+    abstract suspend fun borrarIntentos()
+
+    @Query("DELETE FROM lecciones_completadas")
+    abstract suspend fun borrarLeccionesCompletadas()
+
+    @Query("DELETE FROM racha")
+    abstract suspend fun borrarRacha()
+
+    @Query("DELETE FROM actividad_diaria")
+    abstract suspend fun borrarActividad()
 }

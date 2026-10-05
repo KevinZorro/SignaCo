@@ -11,6 +11,13 @@ class FrameDeLandmarks(
     val landmarks: FloatArray,
     val handedness: String = "?",
     val milisegundosDeDeteccion: Long = 0,
+    /**
+     * Los 21 puntos SIN normalizar, como (x, y) entre 0 y 1 sobre la imagen ya rotada y
+     * espejada. Solo sirven para dibujar la mano sobre la cámara; el modelo nunca los ve.
+     */
+    val puntosEnImagen: FloatArray = FloatArray(0),
+    /** Ancho entre alto de esa imagen, para encajar los puntos en la vista previa. */
+    val proporcionDeImagen: Float = 0f,
 ) {
     val hayMano: Boolean get() = landmarks.isNotEmpty()
 

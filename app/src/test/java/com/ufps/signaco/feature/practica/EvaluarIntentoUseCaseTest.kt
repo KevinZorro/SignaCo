@@ -56,7 +56,7 @@ class EvaluarIntentoUseCaseTest {
 
     @Test
     fun `una sena no reconocida cuenta como intento fallido`() = runTest {
-        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida()
 
         val resultado = caso("A", FloatArray(63))
 

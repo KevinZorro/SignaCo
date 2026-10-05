@@ -20,8 +20,9 @@ object Rutas {
     @Serializable
     data class DetalleLeccion(val leccionId: String)
 
+    /** @param senaInicial la seña con la que arranca; null empieza por la primera. */
     @Serializable
-    data class Practica(val leccionId: String)
+    data class Practica(val leccionId: String, val senaInicial: String? = null)
 
     @Serializable
     data class Quiz(val leccionId: String)

@@ -19,6 +19,14 @@ data class ProgresoSena(
     val dominada: Boolean
         get() = aciertos >= ACIERTOS_PARA_DOMINAR && tasaDeAcierto >= TASA_MINIMA_PARA_DOMINAR
 
+    /** Practicada: ya tiene intentos, pero todavía no cumple la regla de dominada. */
+    val estado: EstadoDeSena
+        get() = when {
+            dominada -> EstadoDeSena.DOMINADA
+            intentos > 0 -> EstadoDeSena.PRACTICADA
+            else -> EstadoDeSena.POR_APRENDER
+        }
+
     companion object {
         const val ACIERTOS_PARA_DOMINAR = 5
         const val TASA_MINIMA_PARA_DOMINAR = 0.6f
@@ -26,3 +34,5 @@ data class ProgresoSena(
         fun vacio(senaId: String) = ProgresoSena(senaId = senaId, intentos = 0, aciertos = 0)
     }
 }
+
+enum class EstadoDeSena { DOMINADA, PRACTICADA, POR_APRENDER }
