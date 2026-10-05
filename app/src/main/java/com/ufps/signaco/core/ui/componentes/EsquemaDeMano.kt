@@ -94,6 +94,7 @@ fun ubicarPuntos(
  *
  * @param descripcion lo que TalkBack lee: el dibujo no es legible por sí mismo.
  * @param espejar dibuja la mano izquierda, según el ajuste de mano dominante.
+ * @param aLaDerecha corre la mano al borde derecho para dejar sitio a un texto a la izquierda.
  */
 @Composable
 fun EsquemaDeMano(
@@ -102,6 +103,7 @@ fun EsquemaDeMano(
     puntos: FloatArray = MANO_DE_REFERENCIA,
     espejar: Boolean = false,
     etiquetas: List<String> = emptyList(),
+    aLaDerecha: Boolean = false,
 ) {
     val estilo = EstiloDeMano(
         linea = MaterialTheme.colorScheme.primary,
@@ -125,7 +127,8 @@ fun EsquemaDeMano(
         // achica y baja un poco para dejar sitio a los nombres encima de los dedos.
         val reduccion = if (etiquetas.isEmpty()) 1f else ESCALA_CON_ETIQUETAS
         val lado = size.minDimension * reduccion
-        val origen = Offset((size.width - lado) / 2f, size.height - lado)
+        val izquierda = if (aLaDerecha) size.width - lado else (size.width - lado) / 2f
+        val origen = Offset(izquierda, size.height - lado)
         val ubicados = ubicarPuntos(puntos, lado, lado, espejar).map { it + origen }
         dibujarMano(ubicados, estilo)
 
