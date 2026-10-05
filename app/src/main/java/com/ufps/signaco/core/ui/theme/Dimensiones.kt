@@ -28,6 +28,7 @@ object Medida {
     val icono = 24.dp
     val miniatura = 72.dp
     val cuadroDeProgreso = 16.dp
+    val cuadroDelCuaderno = 24.dp
     val segmentoDeProgreso = 6.dp
     val ladoDeCuadricula = 16.dp
     val trazoFino = 1.dp
@@ -35,6 +36,9 @@ object Medida {
 
 object Forma {
     val pieza = RoundedCornerShape(8.dp)
+
+    /** Cuadro del cuaderno: con 8 dp un cuadro de 16 dp sería un círculo y dejaría de leerse como cuadro. */
+    val cuadro = RoundedCornerShape(4.dp)
     val contenedor = RoundedCornerShape(16.dp)
     val contenedorGrande = RoundedCornerShape(24.dp)
     val pildora = RoundedCornerShape(percent = 50)

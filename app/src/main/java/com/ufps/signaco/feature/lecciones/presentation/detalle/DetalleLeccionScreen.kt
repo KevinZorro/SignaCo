@@ -3,44 +3,38 @@ package com.ufps.signaco.feature.lecciones.presentation.detalle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
 import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.core.senas.domain.model.Sena
+import com.ufps.signaco.core.ui.componentes.BarraSuperior
+import com.ufps.signaco.core.ui.componentes.BotonDeTexto
+import com.ufps.signaco.core.ui.componentes.BotonPrincipal
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
+import com.ufps.signaco.core.ui.componentes.FilaDeSena
+import com.ufps.signaco.core.ui.componentes.Insignia
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
+import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.componentes.Separador
+import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.feature.lecciones.domain.model.Leccion
 import com.ufps.signaco.feature.lecciones.domain.model.LeccionConProgreso
@@ -50,6 +44,7 @@ import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 @Composable
 fun DetalleLeccionScreen(
     onVolver: () -> Unit,
+    onSenaSeleccionada: (leccionId: String, senaId: String) -> Unit,
     onPracticar: (String) -> Unit,
     onHacerQuiz: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -59,6 +54,7 @@ fun DetalleLeccionScreen(
     DetalleLeccionContenido(
         uiState = uiState,
         onVolver = onVolver,
+        onSenaSeleccionada = { senaId -> onSenaSeleccionada(viewModel.leccionId, senaId) },
         onPracticar = { onPracticar(viewModel.leccionId) },
         onHacerQuiz = { onHacerQuiz(viewModel.leccionId) },
         onReintentar = viewModel::reintentar,
@@ -66,39 +62,44 @@ fun DetalleLeccionScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleLeccionContenido(
     uiState: DetalleLeccionUiState,
     onVolver: () -> Unit,
+    onSenaSeleccionada: (String) -> Unit,
     onPracticar: () -> Unit,
     onHacerQuiz: () -> Unit,
     onReintentar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val leccion = uiState.leccion
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = uiState.leccion?.leccion?.titulo.orEmpty(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = { BarraSuperior(navegacion = Navegacion.VOLVER, onNavegar = onVolver) },
+        bottomBar = {
+            if (leccion != null) {
+                Column(
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = Espacio.margen, vertical = Espacio.md),
+                ) {
+                    BotonPrincipal(
+                        texto = stringResource(R.string.detalle_empezar_practica),
+                        onClick = onPracticar,
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onVolver) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.comun_volver),
-                        )
-                    }
-                },
-            )
+                    // Figma deja una sola acción principal; el quiz sigue a mano como acción
+                    // discreta para no quitar un camino que ya existía.
+                    BotonDeTexto(
+                        texto = stringResource(R.string.detalle_hacer_quiz),
+                        onClick = onHacerQuiz,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         },
     ) { relleno ->
-        val leccion = uiState.leccion
         when {
             uiState.cargando -> EstadoDeCarga(Modifier.padding(relleno))
 
@@ -114,139 +115,80 @@ fun DetalleLeccionContenido(
             )
 
             else -> LazyColumn(
-                modifier = Modifier.padding(relleno).fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Espacio.margen, vertical = Espacio.xs),
+                modifier = Modifier
+                    .padding(relleno)
+                    .fillMaxSize(),
             ) {
-                item(key = "descripcion") {
-                    Text(
-                        text = leccion.leccion.descripcion,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                }
-                item(key = "acciones") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(
-                            onClick = onPracticar,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.detalle_empezar_practica),
-                                modifier = Modifier.padding(start = 8.dp),
-                            )
-                        }
-                        OutlinedButton(
-                            onClick = onHacerQuiz,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) {
-                            Text(stringResource(R.string.detalle_hacer_quiz))
-                        }
+                item(key = "encabezado") {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Espacio.sm),
+                        modifier = Modifier.padding(bottom = Espacio.lg),
+                    ) {
+                        Text(
+                            text = leccion.leccion.titulo,
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.detalle_subtitulo,
+                                leccion.totalDeSenas,
+                                leccion.senasDominadas,
+                            ),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
-                item(key = "titulo_senas") {
-                    Text(
-                        text = stringResource(R.string.detalle_senas_de_la_leccion),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp),
+                itemsIndexed(items = leccion.senas, key = { _, it -> it.sena.id }) { indice, sena ->
+                    if (indice > 0) Separador()
+                    FilaDeSena(
+                        letra = sena.sena.letra,
+                        nombre = sena.sena.nombre,
+                        descripcion = sena.sena.descripcion,
+                        onClick = { onSenaSeleccionada(sena.sena.id) },
+                        insignia = if (sena.dominada) {
+                            {
+                                Insignia(
+                                    texto = stringResource(R.string.detalle_sena_dominada),
+                                    icono = R.drawable.ic_check,
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
-                items(items = leccion.senas, key = { it.sena.id }) { sena ->
-                    FilaDeSena(sena)
-                }
             }
         }
     }
 }
 
-@Composable
-private fun FilaDeSena(sena: SenaConProgreso, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = sena.sena.letra,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(end = 16.dp),
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = sena.sena.descripcion,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = if (sena.progreso.intentos == 0) {
-                        stringResource(R.string.detalle_sena_sin_intentos)
-                    } else {
-                        stringResource(
-                            R.string.detalle_sena_intentos,
-                            sena.progreso.aciertos,
-                            sena.progreso.intentos,
-                        )
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-            if (sena.dominada) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = stringResource(R.string.cd_sena_dominada),
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun DetalleLeccionPreview() {
+    fun sena(letra: String, orden: Int, aciertos: Int, descripcion: String) = SenaConProgreso(
+        sena = Sena(letra, letra, "Letra $letra", descripcion, Categoria.VOCALES, orden, true),
+        progreso = ProgresoSena(letra, intentos = aciertos, aciertos = aciertos),
+    )
     SignaCoTheme {
         DetalleLeccionContenido(
             uiState = DetalleLeccionUiState(
                 cargando = false,
                 leccion = LeccionConProgreso(
-                    leccion = Leccion(
-                        id = "leccion_vocales",
-                        titulo = "Vocales",
-                        descripcion = "Las cinco vocales del abecedario.",
-                        categoria = Categoria.VOCALES,
-                        orden = 1,
-                        senas = emptyList(),
-                    ),
+                    // Peor caso: el título de lección más largo.
+                    leccion = Leccion("c4", "Consonantes S, T, V, W, X y Y", "", Categoria.CONSONANTES, 5, emptyList()),
                     senas = listOf(
-                        SenaConProgreso(
-                            sena = Sena(
-                                id = "A",
-                                letra = "A",
-                                nombre = "Letra A",
-                                descripcion = "Puño cerrado con el pulgar al costado.",
-                                categoria = Categoria.VOCALES,
-                                orden = 1,
-                                disponible = true,
-                            ),
-                            progreso = ProgresoSena("A", intentos = 8, aciertos = 6),
-                        ),
+                        sena("A", 1, 6, "Puño cerrado con el pulgar extendido pegado al costado del índice."),
+                        sena("W", 2, 0, "Índice, medio y anular estirados y separados."),
                     ),
                     completada = false,
                 ),
             ),
             onVolver = {},
+            onSenaSeleccionada = {},
             onPracticar = {},
             onHacerQuiz = {},
             onReintentar = {},
