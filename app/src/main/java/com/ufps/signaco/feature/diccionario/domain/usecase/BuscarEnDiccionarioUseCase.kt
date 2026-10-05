@@ -1,6 +1,7 @@
 package com.ufps.signaco.feature.diccionario.domain.usecase
 
 import com.ufps.signaco.core.senas.domain.SenaRepository
+import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.core.senas.domain.model.Sena
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,10 +17,13 @@ import java.util.Locale
 class BuscarEnDiccionarioUseCase @Inject constructor(
     private val senaRepository: SenaRepository,
 ) {
-    operator fun invoke(consulta: String): Flow<List<Sena>> =
+    /** @param categoria null muestra todas las categorías. */
+    operator fun invoke(consulta: String, categoria: Categoria? = null): Flow<List<Sena>> =
         senaRepository.observarSenas().map { senas ->
             val texto = consulta.trim().lowercase(Locale.ROOT)
-            if (texto.isEmpty()) senas else senas.filter { coincide(it, texto) }
+            senas
+                .filter { categoria == null || it.categoria == categoria }
+                .filter { texto.isEmpty() || coincide(it, texto) }
         }
 
     private fun coincide(sena: Sena, texto: String): Boolean =

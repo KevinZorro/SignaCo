@@ -1,5 +1,6 @@
 package com.ufps.signaco.feature.diccionario
 
+import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.fakes.FakeSenaRepository
 import com.ufps.signaco.fakes.senaDePrueba
@@ -60,5 +61,15 @@ class BuscarEnDiccionarioUseCaseTest {
         val resultado = caso("zzz").first()
 
         assertTrue(resultado.isEmpty())
+    }
+
+    @Test
+    fun `el filtro de categoria deja solo las senas de esa categoria`() = runTest {
+        val conConsonante = senas + senaDePrueba("C", orden = 4, categoria = Categoria.CONSONANTES)
+        val caso = BuscarEnDiccionarioUseCase(FakeSenaRepository(conConsonante))
+
+        val resultado = caso("", Categoria.CONSONANTES).first()
+
+        assertEquals(listOf("C"), resultado.map { it.id })
     }
 }

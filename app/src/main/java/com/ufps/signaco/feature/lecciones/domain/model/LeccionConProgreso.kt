@@ -12,11 +12,16 @@ data class SenaConProgreso(
     val dominada: Boolean get() = progreso.dominada
 }
 
-/** Una lección con el avance del usuario ya calculado. */
+/**
+ * Una lección con el avance del usuario ya calculado.
+ *
+ * @param enCurso la lección que el catálogo propone seguir; la marca el caso de uso del catálogo.
+ */
 data class LeccionConProgreso(
     val leccion: Leccion,
     val senas: List<SenaConProgreso>,
     val completada: Boolean,
+    val enCurso: Boolean = false,
 ) {
     val totalDeSenas: Int get() = senas.size
 

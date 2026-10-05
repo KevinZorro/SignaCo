@@ -1,46 +1,52 @@
 package com.ufps.signaco.feature.lecciones.presentation.catalogo
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
 import com.ufps.signaco.core.senas.domain.model.Categoria
-import com.ufps.signaco.core.ui.componentes.BarraDeAvance
+import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
+import com.ufps.signaco.core.ui.componentes.EstadoDeCuadro
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
+import com.ufps.signaco.core.ui.componentes.FilaDeLeccion
+import com.ufps.signaco.core.ui.componentes.LeyendaDeProgreso
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
+import com.ufps.signaco.core.ui.componentes.Separador
+import com.ufps.signaco.core.ui.theme.Espacio
+import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.feature.lecciones.domain.model.CategoriaConLecciones
 import com.ufps.signaco.feature.lecciones.domain.model.Leccion
 import com.ufps.signaco.feature.lecciones.domain.model.LeccionConProgreso
-import kotlin.math.roundToInt
+import com.ufps.signaco.feature.lecciones.domain.model.SenaConProgreso
+import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 
 @Composable
 fun CatalogoLeccionesScreen(
@@ -61,7 +67,6 @@ fun CatalogoLeccionesScreen(
  * Separado del ViewModel a propósito: así se puede previsualizar y probar con estados
  * inventados, sin Hilt.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogoLeccionesContenido(
     uiState: CatalogoLeccionesUiState,
@@ -69,143 +74,175 @@ fun CatalogoLeccionesContenido(
     onReintentar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.catalogo_titulo)) }) },
-    ) { relleno ->
+    Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxSize()) {
         when {
-            uiState.cargando -> EstadoDeCarga(Modifier.padding(relleno))
+            uiState.cargando -> EstadoDeCarga()
 
             uiState.hayError -> EstadoDeError(
                 mensaje = stringResource(R.string.comun_error_generico),
                 onReintentar = onReintentar,
-                modifier = Modifier.padding(relleno),
             )
 
-            uiState.categorias.isEmpty() -> MensajeVacio(
-                mensaje = stringResource(R.string.catalogo_vacio),
-                modifier = Modifier.padding(relleno),
-            )
+            uiState.categorias.isEmpty() -> MensajeVacio(stringResource(R.string.catalogo_vacio))
 
             else -> LazyColumn(
-                modifier = Modifier.padding(relleno).fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Espacio.margen, vertical = Espacio.lg),
+                modifier = Modifier.safeDrawingPadding(),
             ) {
+                item(key = "encabezado") { Encabezado(uiState) }
                 uiState.categorias.forEach { categoria ->
                     item(key = "categoria_${categoria.categoria.name}") {
-                        EncabezadoDeCategoria(categoria)
+                        Text(
+                            text = categoria.categoria.etiqueta,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier
+                                .padding(top = Espacio.xl, bottom = Espacio.xs)
+                                .semantics { heading() },
+                        )
                     }
-                    items(
-                        items = categoria.lecciones,
-                        key = { it.leccion.id },
-                    ) { leccion ->
-                        TarjetaDeLeccion(
+                    itemsIndexed(items = categoria.lecciones, key = { _, it -> it.leccion.id }) { indice, leccion ->
+                        if (indice > 0) Separador()
+                        FilaDeLeccionConProgreso(
                             leccion = leccion,
                             onClick = { onLeccionSeleccionada(leccion.leccion.id) },
                         )
                     }
                 }
+                item(key = "leyenda") {
+                    LeyendaDeProgreso(Modifier.padding(top = Espacio.lg))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EncabezadoDeCategoria(categoria: CategoriaConLecciones) {
-    Text(
-        text = categoria.categoria.etiqueta,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 8.dp),
+private fun Encabezado(uiState: CatalogoLeccionesUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+        Text(
+            text = stringResource(R.string.catalogo_titulo),
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.semantics { heading() },
+        )
+        // La racha va junto al avance y no junto al título: a 360 dp el título no cabe en una
+        // línea con el chip al lado.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Espacio.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.catalogo_avance, uiState.senasDominadas, uiState.senasDisponibles),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            ChipDeRacha(dias = uiState.diasDeRacha)
+        }
+    }
+}
+
+/** Racha de días sobre una superficie tonal, sin contorno. */
+@Composable
+private fun ChipDeRacha(dias: Int) {
+    val descripcion = pluralStringResource(R.plurals.progreso_dias_seguidos, dias, dias)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.xs),
+        modifier = Modifier
+            .clip(Forma.pildora)
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = Espacio.sm, vertical = Espacio.xs)
+            .clearAndSetSemantics { contentDescription = descripcion },
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_event_available),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = pluralStringResource(R.plurals.progreso_dias, dias, dias),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun FilaDeLeccionConProgreso(leccion: LeccionConProgreso, onClick: () -> Unit) {
+    val avance = stringResource(R.string.cd_avance_cuadros, leccion.senasDominadas, leccion.totalDeSenas)
+    FilaDeLeccion(
+        titulo = leccion.leccion.titulo,
+        // Como en Figma, el subtítulo nombra las señas de la lección.
+        descripcion = leccion.senas.joinToString(", ") { it.sena.letra },
+        estados = cuadrosDe(leccion),
+        descripcionDelAvance = if (leccion.enCurso) {
+            "${stringResource(R.string.cd_leccion_en_curso)}. $avance"
+        } else {
+            avance
+        },
+        enCurso = leccion.enCurso,
+        onClick = onClick,
     )
 }
 
-@Composable
-private fun TarjetaDeLeccion(
-    leccion: LeccionConProgreso,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val porcentaje = (leccion.porcentaje * 100).roundToInt()
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = leccion.leccion.titulo,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                if (leccion.completada) {
-                    // El estado no puede quedar solo en el color: va icono y texto.
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.catalogo_completada),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-            }
-            Text(
-                text = leccion.leccion.descripcion,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            BarraDeAvance(
-                porcentaje = leccion.porcentaje,
-                descripcionAccesible = stringResource(R.string.cd_avance_leccion, porcentaje),
-                modifier = Modifier.padding(top = 12.dp),
-            )
-            Text(
-                text = stringResource(
-                    R.string.catalogo_avance,
-                    leccion.senasDominadas,
-                    leccion.totalDeSenas,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+/**
+ * Un cuadro por seña. En la lección en curso, la primera seña sin dominar es la que se
+ * aprende ahora y lleva el amarillo; el resto queda en Tinta o pendiente.
+ */
+private fun cuadrosDe(leccion: LeccionConProgreso): List<EstadoDeCuadro> {
+    val actual = if (leccion.enCurso) leccion.senas.indexOfFirst { !it.dominada } else -1
+    return leccion.senas.mapIndexed { indice, sena ->
+        when {
+            sena.dominada -> EstadoDeCuadro.DOMINADA
+            indice == actual -> EstadoDeCuadro.EN_CURSO
+            else -> EstadoDeCuadro.POR_APRENDER
         }
     }
 }
 
-@Preview(showBackground = true)
+private fun senaDeEjemplo(letra: String, orden: Int, intentos: Int = 0, aciertos: Int = 0) = SenaConProgreso(
+    sena = Sena(letra, letra, "Letra $letra", "Descripción de $letra", Categoria.CONSONANTES, orden, true),
+    progreso = ProgresoSena(letra, intentos, aciertos),
+)
+
+private fun leccionDeEjemplo(id: String, titulo: String, letras: List<String>, dominadas: Int, enCurso: Boolean) =
+    LeccionConProgreso(
+        leccion = Leccion(id, titulo, "", Categoria.CONSONANTES, 1, emptyList()),
+        senas = letras.mapIndexed { i, letra ->
+            if (i < dominadas) senaDeEjemplo(letra, i, 6, 6) else senaDeEjemplo(letra, i)
+        },
+        completada = dominadas == letras.size,
+        enCurso = enCurso,
+    )
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun CatalogoLeccionesPreview() {
     SignaCoTheme {
         CatalogoLeccionesContenido(
             uiState = CatalogoLeccionesUiState(
                 cargando = false,
+                senasDominadas = 5,
+                senasDisponibles = 19,
+                diasDeRacha = 5,
                 categorias = listOf(
                     CategoriaConLecciones(
                         categoria = Categoria.VOCALES,
+                        lecciones = listOf(leccionDeEjemplo("v", "Vocales", listOf("A", "I", "O", "U"), 4, false)),
+                    ),
+                    CategoriaConLecciones(
+                        categoria = Categoria.CONSONANTES,
                         lecciones = listOf(
-                            LeccionConProgreso(
-                                leccion = Leccion(
-                                    id = "leccion_vocales",
-                                    titulo = "Vocales",
-                                    descripcion = "Las cinco vocales del abecedario.",
-                                    categoria = Categoria.VOCALES,
-                                    orden = 1,
-                                    senas = emptyList(),
-                                ),
-                                senas = emptyList(),
-                                completada = true,
+                            leccionDeEjemplo("c1", "Consonantes B, D, F y G", listOf("B", "D", "F", "G"), 1, true),
+                            // Peor caso: el nombre de lección más largo.
+                            leccionDeEjemplo(
+                                "c4",
+                                "Consonantes S, T, V, W, X y Y con giros de muñeca",
+                                listOf("S", "T", "V", "W", "X", "Y"),
+                                0,
+                                false,
                             ),
                         ),
                     ),

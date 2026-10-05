@@ -43,6 +43,10 @@ class ProgresoRepositoryRoom @Inject constructor(
             ),
         )
     }
+
+    override suspend fun borrarTodo() {
+        progresoDao.borrarTodo()
+    }
 }
 
 private fun ProgresoSenaEntity.aDominio() = ProgresoSena(

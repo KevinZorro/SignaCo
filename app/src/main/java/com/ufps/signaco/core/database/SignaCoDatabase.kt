@@ -6,6 +6,7 @@ import com.ufps.signaco.core.database.dao.LeccionDao
 import com.ufps.signaco.core.database.dao.ProgresoDao
 import com.ufps.signaco.core.database.dao.RachaDao
 import com.ufps.signaco.core.database.dao.SenaDao
+import com.ufps.signaco.core.database.entity.ActividadDiariaEntity
 import com.ufps.signaco.core.database.entity.LeccionCompletadaEntity
 import com.ufps.signaco.core.database.entity.LeccionEntity
 import com.ufps.signaco.core.database.entity.LeccionSenaCrossRef
@@ -27,8 +28,9 @@ import com.ufps.signaco.core.database.entity.SenaEntity
         ProgresoSenaEntity::class,
         LeccionCompletadaEntity::class,
         RachaEntity::class,
+        ActividadDiariaEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class SignaCoDatabase : RoomDatabase() {

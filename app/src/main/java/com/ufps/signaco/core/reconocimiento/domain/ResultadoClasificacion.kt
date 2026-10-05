@@ -13,8 +13,17 @@ sealed interface ResultadoClasificacion {
     /** La sena corresponde a una letra del vocabulario, con la confianza reportada por el modelo. */
     data class LetraReconocida(val letra: String, val confianza: Float) : ResultadoClasificacion
 
-    /** Hay mano en cuadro, pero la pose no corresponde a ninguna letra (clase `no_es_sena`). */
-    data object SenaNoReconocida : ResultadoClasificacion
+    /**
+     * Hay mano en cuadro, pero la pose no corresponde a ninguna letra (clase `no_es_sena`) o la
+     * mejor letra no pasó su umbral.
+     *
+     * [candidata] y [confianza] son la mejor letra activa y su probabilidad cruda, aunque no
+     * alcance el umbral. Solo sirven para mostrar la coincidencia en vivo; no deciden nada.
+     */
+    data class SenaNoReconocida(
+        val candidata: String? = null,
+        val confianza: Float = 0f,
+    ) : ResultadoClasificacion
 
     /** No se detecto mano en el frame. */
     data object ManoNoDetectada : ResultadoClasificacion

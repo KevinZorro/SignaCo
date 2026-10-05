@@ -36,7 +36,7 @@ class FakeSignClassifier @Inject constructor(
                 return@withContext ResultadoClasificacion.ManoNoDetectada
             }
             val letra = LandmarksSimulados.letraCodificadaEn(landmarks)
-                ?: return@withContext ResultadoClasificacion.SenaNoReconocida
+                ?: return@withContext ResultadoClasificacion.SenaNoReconocida()
             ResultadoClasificacion.LetraReconocida(letra, confianzaSimuladaDe(letra))
         }
 

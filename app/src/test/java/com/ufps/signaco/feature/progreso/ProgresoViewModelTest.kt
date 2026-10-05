@@ -1,15 +1,20 @@
 package com.ufps.signaco.feature.progreso
 
 import com.ufps.signaco.core.senas.domain.SenaRepository
+import com.ufps.signaco.fakes.FakeLeccionRepository
 import com.ufps.signaco.fakes.FakeProgresoRepository
 import com.ufps.signaco.fakes.FakeRachaRepository
 import com.ufps.signaco.fakes.FakeSenaRepository
+import com.ufps.signaco.fakes.RelojFijo
 import com.ufps.signaco.fakes.ReglaDeDispatcherPrincipal
 import com.ufps.signaco.fakes.SenaRepositoryQueFalla
 import com.ufps.signaco.fakes.senaDePrueba
+import com.ufps.signaco.feature.lecciones.domain.usecase.CombinarLeccionConProgresoUseCase
+import com.ufps.signaco.feature.lecciones.domain.usecase.ObtenerCatalogoDeLeccionesUseCase
 import com.ufps.signaco.feature.progreso.domain.ProgresoRepository
 import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 import com.ufps.signaco.feature.progreso.domain.model.Racha
+import com.ufps.signaco.feature.progreso.domain.usecase.BorrarProgresoUseCase
 import com.ufps.signaco.feature.progreso.domain.usecase.ObtenerResumenDeProgresoUseCase
 import com.ufps.signaco.feature.progreso.presentation.ProgresoViewModel
 import kotlinx.coroutines.flow.first
@@ -37,7 +42,14 @@ class ProgresoViewModelTest {
             rachaRepository = FakeRachaRepository(
                 Racha(diasConsecutivos = 2, mejorRacha = 6, ultimoDiaActivo = 100),
             ),
+            reloj = RelojFijo(dia = 100),
         ),
+        ObtenerCatalogoDeLeccionesUseCase(
+            leccionRepository = FakeLeccionRepository(),
+            progresoRepository = progreso,
+            combinarProgreso = CombinarLeccionConProgresoUseCase(),
+        ),
+        BorrarProgresoUseCase(progreso),
     )
 
     @Test

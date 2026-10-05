@@ -74,4 +74,15 @@ class CalificarQuizUseCaseTest {
         letraCorrecta = letra,
         opciones = listOf(letra, "X", "Y", "Z"),
     )
+
+    @Test
+    fun `devuelve cada respuesta calificada en el orden de las preguntas`() {
+        val resultado = caso(
+            preguntas,
+            respuestas = mapOf("A" to "A", "B" to "X", "C" to "C"),
+        )
+
+        assertEquals(listOf("A", "B", "C", "D", "E"), resultado.respuestas.map { it.senaId })
+        assertEquals(listOf(true, false, true, false, false), resultado.respuestas.map { it.acerto })
+    }
 }

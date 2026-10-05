@@ -3,8 +3,11 @@ package com.ufps.signaco.feature.lecciones
 import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.fakes.FakeLeccionRepository
 import com.ufps.signaco.fakes.FakeProgresoRepository
+import com.ufps.signaco.fakes.FakeRachaRepository
+import com.ufps.signaco.fakes.FakeSenaRepository
 import com.ufps.signaco.fakes.LeccionRepositoryQueFalla
 import com.ufps.signaco.fakes.ReglaDeDispatcherPrincipal
+import com.ufps.signaco.fakes.RelojFijo
 import com.ufps.signaco.fakes.leccionDePrueba
 import com.ufps.signaco.fakes.senaDePrueba
 import com.ufps.signaco.feature.lecciones.domain.LeccionRepository
@@ -13,6 +16,7 @@ import com.ufps.signaco.feature.lecciones.domain.usecase.ObtenerCatalogoDeLeccio
 import com.ufps.signaco.feature.lecciones.presentation.catalogo.CatalogoLeccionesViewModel
 import com.ufps.signaco.feature.progreso.domain.ProgresoRepository
 import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
+import com.ufps.signaco.feature.progreso.domain.usecase.ObtenerResumenDeProgresoUseCase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -40,6 +44,12 @@ class CatalogoLeccionesViewModelTest {
             leccionRepository = lecciones,
             progresoRepository = progreso,
             combinarProgreso = CombinarLeccionConProgresoUseCase(),
+        ),
+        ObtenerResumenDeProgresoUseCase(
+            senaRepository = FakeSenaRepository(leccion.senas),
+            progresoRepository = progreso,
+            rachaRepository = FakeRachaRepository(),
+            reloj = RelojFijo(dia = 100),
         ),
     )
 

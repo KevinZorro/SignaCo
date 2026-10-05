@@ -9,18 +9,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,20 +22,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
+import com.ufps.signaco.core.ui.componentes.BarraSuperior
+import com.ufps.signaco.core.ui.componentes.BotonPrincipal
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
+import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.theme.Espacio
+import com.ufps.signaco.core.ui.theme.Forma
+import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.feature.quiz.domain.model.PreguntaQuiz
+import com.ufps.signaco.feature.quiz.domain.model.ResultadoQuiz
 
 @Composable
 fun QuizScreen(
     onVolver: () -> Unit,
-    onQuizTerminado: (String, Int, Int) -> Unit,
+    onQuizTerminado: (String, ResultadoQuiz) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: QuizViewModel = hiltViewModel(),
 ) {
@@ -50,7 +49,7 @@ fun QuizScreen(
     val resultado by viewModel.resultado.collectAsStateWithLifecycle()
 
     LaunchedEffect(resultado) {
-        resultado?.let { onQuizTerminado(viewModel.leccionId, it.aciertos, it.total) }
+        resultado?.let { onQuizTerminado(viewModel.leccionId, it) }
     }
 
     QuizContenido(
@@ -64,7 +63,6 @@ fun QuizScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizContenido(
     uiState: QuizUiState,
@@ -77,17 +75,12 @@ fun QuizContenido(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.quiz_titulo)) },
-                navigationIcon = {
-                    IconButton(onClick = onVolver) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.comun_volver),
-                        )
-                    }
-                },
+            BarraSuperior(
+                navegacion = Navegacion.VOLVER,
+                onNavegar = onVolver,
+                titulo = stringResource(R.string.quiz_titulo),
             )
         },
     ) { relleno ->
@@ -110,8 +103,8 @@ fun QuizContenido(
                 modifier = Modifier
                     .padding(relleno)
                     .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = Espacio.margen, vertical = Espacio.md),
+                verticalArrangement = Arrangement.spacedBy(Espacio.md),
             ) {
                 Text(
                     text = stringResource(
@@ -128,19 +121,19 @@ fun QuizContenido(
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = Forma.contenedor,
                 ) {
                     Text(
                         text = pregunta.enunciado,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(Espacio.md),
                     )
                 }
 
                 Column(
                     modifier = Modifier.fillMaxWidth().selectableGroup(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(Espacio.xs),
                 ) {
                     pregunta.opciones.forEach { opcion ->
                         OpcionDeRespuesta(
@@ -151,19 +144,16 @@ fun QuizContenido(
                     }
                 }
 
-                Button(
+                BotonPrincipal(
+                    texto = if (uiState.esLaUltima) {
+                        stringResource(R.string.quiz_terminar)
+                    } else {
+                        stringResource(R.string.quiz_siguiente)
+                    },
                     onClick = if (uiState.esLaUltima) onTerminar else onSiguiente,
-                    enabled = uiState.letraSeleccionada != null,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) {
-                    Text(
-                        text = if (uiState.esLaUltima) {
-                            stringResource(R.string.quiz_terminar)
-                        } else {
-                            stringResource(R.string.quiz_siguiente)
-                        },
-                    )
-                }
+                    habilitado = uiState.letraSeleccionada != null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -179,21 +169,21 @@ private fun OpcionDeRespuesta(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = Medida.areaTactil)
             .selectable(
                 selected = seleccionada,
                 role = Role.RadioButton,
                 onClick = onSeleccionar,
             ),
         color = if (seleccionada) {
-            MaterialTheme.colorScheme.secondaryContainer
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceVariant
+            MaterialTheme.colorScheme.surfaceContainer
         },
-        shape = MaterialTheme.shapes.medium,
+        shape = Forma.contenedor,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = Espacio.md, vertical = Espacio.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(
@@ -204,7 +194,7 @@ private fun OpcionDeRespuesta(
             Text(
                 text = letra,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 16.dp),
+                modifier = Modifier.padding(start = Espacio.md),
             )
         }
     }

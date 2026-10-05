@@ -94,9 +94,9 @@ class TFLiteSignClassifier @Inject constructor(
         val pasaElUmbral = letra != null && confianza >= umbral
 
         val resultado = when {
-            ganoElRechazo -> ResultadoClasificacion.SenaNoReconocida
-            ganoUnaExcluida && MODO_ESTRICTO -> ResultadoClasificacion.SenaNoReconocida
-            !pasaElUmbral -> ResultadoClasificacion.SenaNoReconocida
+            ganoElRechazo -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
+            ganoUnaExcluida && MODO_ESTRICTO -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
+            !pasaElUmbral -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
             else -> ResultadoClasificacion.LetraReconocida(letra, confianza)
         }
 
@@ -120,7 +120,7 @@ class TFLiteSignClassifier @Inject constructor(
     private fun describir(resultado: ResultadoClasificacion): String = when (resultado) {
         is ResultadoClasificacion.LetraReconocida ->
             "LetraReconocida(${resultado.letra}, %.4f)".format(resultado.confianza)
-        ResultadoClasificacion.SenaNoReconocida -> "SenaNoReconocida"
+        is ResultadoClasificacion.SenaNoReconocida -> "SenaNoReconocida"
         ResultadoClasificacion.ManoNoDetectada -> "ManoNoDetectada"
     }
 

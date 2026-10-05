@@ -1,5 +1,6 @@
 package com.ufps.signaco.feature.progreso
 
+import com.ufps.signaco.feature.progreso.domain.model.EstadoDeSena
 import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -37,5 +38,20 @@ class ProgresoSenaTest {
         val progreso = ProgresoSena("A", intentos = 7, aciertos = 6)
 
         assertTrue(progreso.dominada)
+    }
+
+    @Test
+    fun `sin intentos la sena esta por aprender`() {
+        assertEquals(EstadoDeSena.POR_APRENDER, ProgresoSena.vacio("A").estado)
+    }
+
+    @Test
+    fun `con intentos pero sin dominar la sena esta practicada`() {
+        assertEquals(EstadoDeSena.PRACTICADA, ProgresoSena("A", intentos = 3, aciertos = 1).estado)
+    }
+
+    @Test
+    fun `una sena dominada no cuenta como practicada`() {
+        assertEquals(EstadoDeSena.DOMINADA, ProgresoSena("A", intentos = 6, aciertos = 6).estado)
     }
 }

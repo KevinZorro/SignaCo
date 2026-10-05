@@ -15,4 +15,7 @@ interface ProgresoRepository {
     fun observarLeccionesCompletadas(): Flow<Set<String>>
 
     suspend fun marcarLeccionCompletada(leccionId: String, aciertosQuiz: Int, totalQuiz: Int)
+
+    /** Borra intentos, lecciones completadas, racha y días activos. No se puede deshacer. */
+    suspend fun borrarTodo()
 }

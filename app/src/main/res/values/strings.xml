@@ -6,54 +6,99 @@
     <string name="comun_reintentar">Reintentar</string>
     <string name="comun_error_generico">No se pudo cargar la información.</string>
     <string name="comun_volver">Volver</string>
-    <string name="comun_porcentaje">%1$d %%</string>
+    <string name="comun_cerrar">Cerrar</string>
+    <string name="sello_bien">¡Bien!</string>
+
+    <!-- Leyenda del cuaderno -->
+    <string name="leyenda_dominada">Dominada</string>
+    <string name="leyenda_en_curso">Lección en curso</string>
+    <string name="leyenda_practicada">Practicada</string>
+    <string name="leyenda_por_aprender">Por aprender</string>
 
     <!-- Navegación -->
-    <string name="nav_lecciones">Lecciones</string>
+    <string name="nav_lecciones">Aprender</string>
     <string name="nav_diccionario">Diccionario</string>
     <string name="nav_progreso">Progreso</string>
 
     <!-- Catálogo de lecciones -->
-    <string name="catalogo_titulo">Lecciones</string>
+    <string name="catalogo_titulo">Aprende LSC</string>
     <string name="catalogo_vacio">Todavía no hay lecciones disponibles.</string>
     <string name="catalogo_avance">%1$d de %2$d señas dominadas</string>
-    <string name="catalogo_completada">Lección completada</string>
+    <string name="catalogo_seguir">Seguir</string>
+    <string name="cd_avance_cuadros">%1$d de %2$d señas dominadas</string>
+    <string name="cd_leccion_en_curso">Lección en curso</string>
 
     <!-- Detalle de lección -->
-    <string name="detalle_senas_de_la_leccion">Señas de la lección</string>
     <string name="detalle_empezar_practica">Empezar práctica</string>
     <string name="detalle_hacer_quiz">Hacer el quiz</string>
     <string name="detalle_no_encontrada">No encontramos esta lección.</string>
     <string name="detalle_sena_dominada">Dominada</string>
-    <string name="detalle_sena_intentos">%1$d aciertos de %2$d intentos</string>
-    <string name="detalle_sena_sin_intentos">Sin practicar</string>
+    <string name="detalle_subtitulo">Mira cada seña antes de practicarla con la cámara. Son %1$d y ya dominas %2$d.</string>
+
+    <!-- Lección: detalle de seña -->
+    <string name="detalle_sena_titulo">Lección de %1$s</string>
+    <string name="detalle_sena_indicacion">Indicación:</string>
+    <string name="detalle_sena_practica_conmigo">Practica conmigo</string>
+    <string name="detalle_sena_repite">Repite el gesto frente a ti.
+La cámara viene en el siguiente paso.</string>
+    <string name="detalle_sena_probar">Pruébalo con la cámara</string>
+    <string name="cd_letra_grande">Letra %1$s</string>
+
+    <!-- Primer uso -->
+    <string name="primer_uso_titulo">Primero conoce tu mano</string>
+    <string name="primer_uso_explicacion">Antes de empezar, aprende cómo se llama cada dedo. Los vas a necesitar en cada instrucción.</string>
+    <string name="primer_uso_continuar">Continuar</string>
+    <string name="dedo_pulgar">Pulgar</string>
+    <string name="dedo_indice">Índice</string>
+    <string name="dedo_medio">Medio</string>
+    <string name="dedo_anular">Anular</string>
+    <string name="dedo_menique">Meñique</string>
+    <string name="cd_esquema_dedos">Esquema de una mano abierta con los nombres de los dedos: pulgar, índice, medio, anular y meñique.</string>
 
     <!-- Práctica -->
-    <string name="practica_titulo">Práctica</string>
-    <string name="practica_sena_objetivo">Practica la letra %1$s</string>
-    <string name="practica_estado_esperando">Cuando estés listo, haz la seña</string>
     <string name="practica_estado_reconociendo">Reconociendo…</string>
-    <string name="practica_estado_acierto">Acertaste la letra %1$s, con %2$d %% de confianza</string>
     <string name="practica_estado_otra_letra">Detectamos la letra %1$s, no la %2$s</string>
-    <string name="practica_estado_no_reconocida">No reconocimos esa seña. Intenta de nuevo.</string>
-    <string name="practica_estado_sin_mano">No vemos tu mano en el recuadro</string>
     <string name="practica_siguiente">Siguiente seña</string>
     <string name="practica_terminar">Terminar y hacer el quiz</string>
-    <string name="practica_aciertos_sesion">Aciertos en esta sesión: %1$d</string>
     <string name="practica_mostrar_pistas">Mostrar la descripción de la seña</string>
     <string name="practica_sin_senas">Esta lección no tiene señas para practicar.</string>
-    <string name="practica_estado_buscando_manos">Buscando tu mano…</string>
-    <string name="practica_estado_sin_deteccion">Captura detenida</string>
-    <string name="practica_iniciar_captura">Iniciar captura</string>
-    <string name="practica_detener_captura">Detener captura</string>
+    <string name="practica_estado_buscando_manos">Buscando tu mano</string>
     <string name="practica_cambiar_camara">Cambiar de cámara</string>
     <string name="practica_reintentar_sena">Reintentar esta seña</string>
-    <string name="practica_estabilidad">Manteniendo la seña: %1$d de %2$d</string>
+    <string name="practica_sena_de">Seña %1$d de %2$d</string>
+    <string name="practica_indicacion">Haz esta seña frente a la cámara</string>
+    <string name="practica_camara_lista">Cámara lista</string>
+    <string name="practica_sena_confirmada">Seña confirmada</string>
+    <string name="practica_sin_coincidencia">Sin coincidencia</string>
+    <string name="practica_coincidencia">Coincidencia</string>
+    <string name="practica_porcentaje">%1$d %%</string>
+    <string name="practica_umbral">Se confirma desde el %1$d %%</string>
+    <string name="practica_iniciar_intento">Iniciar intento</string>
+    <string name="practica_detener">Detener</string>
+    <string name="practica_acertaste">¡Acertaste!</string>
+    <string name="practica_acierto_detalle">%1$s, con %2$d %% de coincidencia.</string>
+    <string name="practica_no_reconocimos">No reconocimos la seña</string>
+    <string name="practica_consejo">Acerca la mano al recuadro y mantén la seña quieta un segundo.</string>
+    <string name="practica_coincidencia_necesaria">%1$d %% de coincidencia. Se necesita %2$d %%.</string>
+    <string name="practica_reintentar">Reintentar</string>
+    <string name="cd_coincidencia">Coincidencia de %1$d por ciento. Se confirma desde el %2$d por ciento.</string>
+    <string name="cd_progreso_sesion">Seña %1$d de %2$d</string>
 
     <!-- Permiso de cámara -->
-    <string name="practica_permiso_titulo">SignaCo necesita la cámara</string>
-    <string name="practica_permiso_explicacion">La cámara se usa solo para reconocer tus señas en el dispositivo. No se graba ni se envía nada.</string>
-    <string name="practica_permiso_conceder">Permitir la cámara</string>
+    <string name="practica_permiso_titulo">Practica frente a la cámara</string>
+    <string name="practica_permiso_explicacion">Para corregir tus señas, SignaCO necesita ver tus manos mientras practicas.</string>
+    <string name="practica_permiso_conceder">Permitir cámara</string>
+    <string name="practica_permiso_ahora_no">Ahora no</string>
+    <string name="practica_permiso_nota">Puedes cambiar el permiso cuando quieras en los ajustes de Android.</string>
+    <string name="practica_permiso_puntos">21 puntos.</string>
+    <string name="practica_permiso_puntos_detalle">Es todo lo que la app lee de tu mano.</string>
+    <string name="practica_permiso_telefono">Todo se procesa en tu teléfono</string>
+    <string name="practica_permiso_telefono_detalle">El video nunca sale del dispositivo.</string>
+    <string name="practica_permiso_video">No se guarda ningún video</string>
+    <string name="practica_permiso_video_detalle">Solo se leen los puntos de tu mano, cuadro a cuadro.</string>
+    <string name="practica_permiso_conexion">Funciona sin conexión</string>
+    <string name="practica_permiso_conexion_detalle">No necesitas internet para practicar.</string>
+    <string name="cd_esquema_puntos">Esquema de los 21 puntos de una mano que lee la app.</string>
     <string name="practica_permiso_ajustes">Abrir los ajustes de la app</string>
 
     <!-- Fallos del reconocimiento -->
@@ -71,35 +116,113 @@
 
     <!-- Resultado del quiz -->
     <string name="resultado_titulo">Resultado</string>
-    <string name="resultado_aprobado">Lección aprobada</string>
-    <string name="resultado_reprobado">Te faltó poco</string>
     <string name="resultado_detalle_aprobado">Ya puedes seguir con la siguiente lección.</string>
     <string name="resultado_detalle_reprobado">Practica un poco más y vuelve a intentarlo.</string>
-    <string name="resultado_puntaje">%1$d de %2$d respuestas correctas</string>
     <string name="resultado_repetir">Repetir el quiz</string>
-    <string name="resultado_volver_lecciones">Volver a las lecciones</string>
+    <string name="resultado_titulo_quiz">Quiz de %1$s</string>
+    <string name="resultado_de_total">de %1$d aciertos</string>
+    <string name="resultado_acertada">Acertada</string>
+    <string name="resultado_repasar">Repasar</string>
+    <string name="resultado_ver_progreso">Ver mi progreso</string>
+    <string name="cd_resultado_puntaje">%1$d de %2$d aciertos</string>
+    <string name="cd_respuesta_acertada">Acertada</string>
+    <string name="cd_respuesta_fallada">Fallada</string>
 
     <!-- Progreso -->
-    <string name="progreso_titulo">Mi progreso</string>
-    <string name="progreso_senas_dominadas">Señas dominadas</string>
-    <string name="progreso_lecciones_completadas">Lecciones completadas</string>
-    <string name="progreso_racha_actual">Racha actual</string>
-    <string name="progreso_mejor_racha">Mejor racha</string>
-    <string name="progreso_de_total">%1$d de %2$d</string>
-    <string name="progreso_detalle_titulo">Detalle por seña</string>
-    <string name="progreso_sin_actividad">Todavía no has practicado ninguna seña.</string>
+    <string name="progreso_titulo">Tu progreso</string>
+    <string name="progreso_privacidad">Se guarda en este teléfono. No se envía a ningún servidor.</string>
+    <string name="progreso_dominadas_de">%1$d de %2$d señas dominadas</string>
+    <string name="progreso_lecciones_de">%1$d de %2$d lecciones completas</string>
+    <string name="progreso_mejor_racha_texto">Tu mejor racha: %1$s</string>
+    <string name="progreso_borrar">Borrar mi progreso</string>
+    <string name="progreso_borrar_nota">Te pediremos confirmación. El borrado es definitivo.</string>
+    <string name="progreso_borrar_titulo">¿Borrar tu progreso?</string>
+    <string name="progreso_borrar_mensaje">Se borran tus intentos, las lecciones completadas y tu racha. No se puede deshacer.</string>
+    <string name="progreso_borrar_confirmar">Borrar</string>
+    <string name="progreso_cancelar">Cancelar</string>
+    <string name="progreso_ajustes">Ajustes</string>
+    <string name="cd_dia_activo">%1$s, con actividad</string>
+    <string name="cd_dia_inactivo">%1$s, sin actividad</string>
 
     <!-- Diccionario -->
     <string name="diccionario_titulo">Diccionario</string>
-    <string name="diccionario_buscar">Buscar una letra o una descripción</string>
+    <string name="diccionario_buscar">Buscar seña o letra</string>
     <string name="diccionario_limpiar">Limpiar la búsqueda</string>
     <string name="diccionario_sin_resultados">No encontramos señas con ese texto.</string>
     <string name="diccionario_no_disponible">Fuera del MVP</string>
+    <string name="diccionario_subtitulo">Consulta o repasa cualquier seña en cualquier momento.</string>
+    <string name="diccionario_todos">Todos</string>
+
+    <!-- Teoría de la seña -->
+    <string name="teoria_titulo">Teoría de la seña</string>
+    <string name="teoria_consejos">Consejos</string>
+    <string name="teoria_iniciar">Iniciar intento</string>
+    <string name="teoria_no_practicable">Esta seña todavía no se practica en la app.</string>
+
+    <!-- Ajustes -->
+    <string name="ajustes_titulo">Ajustes</string>
+    <string name="ajustes_subtitulo">Se guardan en este teléfono.</string>
+    <string name="ajustes_practica">Práctica</string>
+    <string name="ajustes_mano">Mano dominante</string>
+    <string name="ajustes_mano_descripcion">La cámara y los clips se ajustan a esta mano.</string>
+    <string name="ajustes_mano_derecha">Derecha</string>
+    <string name="ajustes_mano_izquierda">Izquierda</string>
+    <string name="ajustes_velocidad">Velocidad de los clips</string>
+    <string name="ajustes_velocidad_lenta">Lenta</string>
+    <string name="ajustes_velocidad_media">Media</string>
+    <string name="ajustes_velocidad_normal">Normal</string>
+    <string name="ajustes_vibracion">Vibración al acertar</string>
+    <string name="ajustes_vibracion_descripcion">Un toque corto al confirmar la seña.</string>
+    <string name="ajustes_accesibilidad">Accesibilidad</string>
+    <string name="ajustes_tamano">Tamaño y contraste</string>
+    <string name="ajustes_subtitulos">Subtítulos en los clips</string>
+    <string name="ajustes_subtitulos_descripcion">Muestra la palabra durante la seña.</string>
+    <string name="ajustes_nota">Ningún ajuste sale de tu teléfono. Puedes cambiarlos cuando quieras.</string>
+    <string name="ajustes_separador"> · </string>
+
+    <!-- Tamaño y contraste -->
+    <string name="tamano_titulo">Tamaño y contraste</string>
+    <string name="tamano_subtitulo">Mira cómo se verán las señas antes de guardar.</string>
+    <string name="tamano_vista_previa">Vista previa</string>
+    <string name="tamano_ejemplo_palabra">Letra A</string>
+    <string name="tamano_ejemplo_descripcion">Puño cerrado con el pulgar extendido pegado al costado del índice.</string>
+    <string name="tamano_texto">Tamaño del texto</string>
+    <string name="tamano_muestra" translatable="false">A</string>
+    <string name="tamano_normal">Normal</string>
+    <string name="tamano_grande">Grande</string>
+    <string name="tamano_muy_grande">Muy grande</string>
+    <string name="tamano_contraste">Alto contraste</string>
+    <string name="tamano_contraste_descripcion">Bordes y textos más oscuros.</string>
+    <string name="tamano_animaciones">Reducir animaciones</string>
+    <string name="tamano_animaciones_descripcion">Quita la animación del sello al acertar.</string>
+    <string name="tamano_guardar">Guardar cambios</string>
 
     <!-- Descripciones para lectores de pantalla -->
-    <string name="cd_sena_dominada">Seña dominada</string>
     <string name="cd_vista_previa">Vista de la cámara para practicar la seña</string>
-    <string name="cd_avance_leccion">Avance de la lección: %1$d por ciento</string>
+
+    <string-array name="dias_iniciales">
+        <item>L</item>
+        <item>M</item>
+        <item>M</item>
+        <item>J</item>
+        <item>V</item>
+        <item>S</item>
+        <item>D</item>
+    </string-array>
+    <string-array name="dias_nombres">
+        <item>Lunes</item>
+        <item>Martes</item>
+        <item>Miércoles</item>
+        <item>Jueves</item>
+        <item>Viernes</item>
+        <item>Sábado</item>
+        <item>Domingo</item>
+    </string-array>
+
+    <plurals name="progreso_dias_seguidos">
+        <item quantity="one">%1$d día seguido</item>
+        <item quantity="other">%1$d días seguidos</item>
+    </plurals>
 
     <plurals name="progreso_dias">
         <item quantity="one">%1$d día</item>

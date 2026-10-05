@@ -16,6 +16,7 @@ import com.ufps.signaco.feature.practica.domain.model.ResultadoDeFrame
 import com.ufps.signaco.feature.practica.domain.model.ResultadoIntento
 import com.ufps.signaco.feature.practica.domain.usecase.CrearEstabilizadorUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerSenasParaPracticarUseCase
+import com.ufps.signaco.feature.practica.domain.usecase.ObtenerUmbralDeSenaUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ProcesarFrameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -25,6 +26,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -47,9 +50,11 @@ class PracticaViewModel @Inject constructor(
     private val preferenciasRepository: PreferenciasRepository,
     private val procesarFrame: ProcesarFrameUseCase,
     private val crearEstabilizador: CrearEstabilizadorUseCase,
+    private val obtenerUmbral: ObtenerUmbralDeSenaUseCase,
 ) : ViewModel() {
 
-    val leccionId: String = savedStateHandle.toRoute<Rutas.Practica>().leccionId
+    private val ruta = savedStateHandle.toRoute<Rutas.Practica>()
+    val leccionId: String = ruta.leccionId
 
     private val estadoDeSesion = MutableStateFlow(EstadoDeSesion())
 
@@ -105,6 +110,14 @@ class PracticaViewModel @Inject constructor(
                     estadoDeSesion.update { it.copy(error = ErrorDeReconocimiento.CONFIGURACION) }
                 }
         }
+        // El umbral cambia con cada seña: se vuelve a leer del config cuando cambia la actual.
+        viewModelScope.launch {
+            uiState.map { it.senaActual?.id }.distinctUntilChanged().filterNotNull().collect { senaId ->
+                runCatching { obtenerUmbral(senaId) }
+                    .onSuccess { umbral -> estadoDeSesion.update { it.copy(umbral = umbral) } }
+                    .onFailure { Log.e(ETIQUETA, "No se pudo leer el umbral de $senaId", it) }
+            }
+        }
     }
 
     /** Lo llama la capa de cámara por cada frame analizado. */
@@ -115,6 +128,9 @@ class PracticaViewModel @Inject constructor(
         val estabilizador = estabilizador ?: return
         if (!hayFrameEnProceso.compareAndSet(false, true)) return
 
+        estadoDeSesion.update {
+            it.copy(puntosDeMano = frame.puntosEnImagen, proporcionDeImagen = frame.proporcionDeImagen)
+        }
         viewModelScope.launch {
             try {
                 val resultado = procesarFrame(senaObjetivo, frame, estabilizador)
@@ -137,14 +153,16 @@ class PracticaViewModel @Inject constructor(
                 estadoDeReconocimiento = resultado.estado,
                 avance = resultado.avance,
                 framesParaConfirmar = resultado.total,
+                coincidencia = resultado.coincidencia,
                 retroalimentacion = when (resultado.estado) {
                     EstadoDeReconocimiento.RECONOCIENDO -> EstadoDeRetroalimentacion.Reconociendo
                     else -> EstadoDeRetroalimentacion.SinMano
                 },
             )
 
-            ResultadoDeFrame.NoReconocidaEstable -> sesion.copy(
+            is ResultadoDeFrame.NoReconocidaEstable -> sesion.copy(
                 estadoDeReconocimiento = EstadoDeReconocimiento.RECONOCIENDO,
+                coincidencia = resultado.coincidencia,
                 retroalimentacion = EstadoDeRetroalimentacion.NoReconocida,
             )
 
@@ -215,6 +233,7 @@ class PracticaViewModel @Inject constructor(
                     EstadoDeReconocimiento.SIN_DETECCION
                 },
                 retroalimentacion = EstadoDeRetroalimentacion.Esperando,
+                puntosDeMano = FloatArray(0),
             )
         }
     }
@@ -227,14 +246,12 @@ class PracticaViewModel @Inject constructor(
 
     fun alResponderElPermiso(concedido: Boolean) {
         estadoDeSesion.update {
+            // Con el permiso concedido la cámara queda lista, pero el intento lo inicia la
+            // persona con el botón de iniciar.
             it.copy(
                 permiso = if (concedido) EstadoDelPermiso.CONCEDIDO else EstadoDelPermiso.DENEGADO,
-                capturando = concedido,
-                estadoDeReconocimiento = if (concedido) {
-                    EstadoDeReconocimiento.BUSCANDO_MANOS
-                } else {
-                    EstadoDeReconocimiento.SIN_DETECCION
-                },
+                capturando = false,
+                estadoDeReconocimiento = EstadoDeReconocimiento.SIN_DETECCION,
             )
         }
     }
@@ -278,9 +295,10 @@ class PracticaViewModel @Inject constructor(
         estabilizador?.reiniciar()
         estadoDeSesion.update {
             it.copy(
-                indice = it.indice + 1,
+                indice = uiState.value.indiceActual + 1,
                 intentoConfirmado = false,
                 avance = 0,
+                puntosDeMano = FloatArray(0),
                 retroalimentacion = EstadoDeRetroalimentacion.Esperando,
                 estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
             )
@@ -299,7 +317,7 @@ class PracticaViewModel @Inject constructor(
         cargando = carga.cargando,
         hayError = carga.hayError,
         senas = carga.senas,
-        indiceActual = sesion.indice.coerceIn(0, maxOf(0, carga.senas.lastIndex)),
+        indiceActual = indiceResuelto(sesion.indice, carga.senas),
         retroalimentacion = sesion.retroalimentacion,
         aciertosDeLaSesion = sesion.aciertos,
         mostrarPistas = preferencias.mostrarPistas,
@@ -312,7 +330,19 @@ class PracticaViewModel @Inject constructor(
         framesParaConfirmar = sesion.framesParaConfirmar,
         errorDelReconocimiento = sesion.error,
         intentoConfirmado = sesion.intentoConfirmado,
+        coincidencia = sesion.coincidencia,
+        umbral = sesion.umbral,
+        puntosDeMano = sesion.puntosDeMano,
+        proporcionDeImagen = sesion.proporcionDeImagen,
+        reducirAnimaciones = preferencias.reducirAnimaciones,
     )
+
+    /** Mientras no se haya avanzado, la sesión arranca en la seña que pidió la ruta. */
+    private fun indiceResuelto(indice: Int, senas: List<Sena>): Int {
+        val inicial = senas.indexOfFirst { it.id == ruta.senaInicial }.coerceAtLeast(0)
+        val elegido = if (indice == INDICE_SIN_ELEGIR) inicial else indice
+        return elegido.coerceIn(0, maxOf(0, senas.lastIndex))
+    }
 
     private data class CargaDeSenas(
         val cargando: Boolean = true,
@@ -321,7 +351,7 @@ class PracticaViewModel @Inject constructor(
     )
 
     private data class EstadoDeSesion(
-        val indice: Int = 0,
+        val indice: Int = INDICE_SIN_ELEGIR,
         val retroalimentacion: EstadoDeRetroalimentacion = EstadoDeRetroalimentacion.Esperando,
         val aciertos: Int = 0,
         val permiso: EstadoDelPermiso = EstadoDelPermiso.PENDIENTE,
@@ -332,6 +362,10 @@ class PracticaViewModel @Inject constructor(
         val framesParaConfirmar: Int = 0,
         val error: ErrorDeReconocimiento? = null,
         val intentoConfirmado: Boolean = false,
+        val coincidencia: Float = 0f,
+        val umbral: Float = 0f,
+        val puntosDeMano: FloatArray = FloatArray(0),
+        val proporcionDeImagen: Float = 0f,
     )
 
     companion object {
@@ -342,6 +376,7 @@ class PracticaViewModel @Inject constructor(
         const val ESPERA_POR_DEFECTO_MS = 1_200L
 
         private const val ETIQUETA = "Practica"
+        private const val INDICE_SIN_ELEGIR = -1
         private const val TIEMPO_DE_ESPERA_MS = 5_000L
     }
 }

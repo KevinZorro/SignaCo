@@ -34,7 +34,7 @@ class FakeSignClassifierTest {
     fun `un frame marcado como no reconocido devuelve sena no reconocida`() = runTest(dispatcher) {
         val resultado = clasificador.clasificar(LandmarksSimulados.senaNoReconocida())
 
-        assertEquals(ResultadoClasificacion.SenaNoReconocida, resultado)
+        assertEquals(ResultadoClasificacion.SenaNoReconocida(), resultado)
     }
 
     @Test

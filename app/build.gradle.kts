@@ -59,6 +59,10 @@ android {
             isReturnDefaultValues = true
         }
     }
+    sourceSets {
+        // MigrationTestHelper lee los esquemas exportados como assets de las pruebas.
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    }
 }
 
 // Room escribe aqui los esquemas de la base. Sirven para revisar migraciones en code review
