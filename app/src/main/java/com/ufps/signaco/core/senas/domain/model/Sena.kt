@@ -9,6 +9,8 @@ package com.ufps.signaco.core.senas.domain.model
  *           del MVP. Hoy solo aplica a la enie ("NN"), excluida por variacion regional
  *           documentada en el dataset LSC70: se muestra en el diccionario pero no se
  *           practica ni entra en los quiz.
+ * @param referencia imagen (o, más adelante, foto o video) de cómo se hace la seña. Null si
+ *           todavía no hay material: la pantalla muestra la letra grande en su lugar.
  */
 data class Sena(
     val id: String,
@@ -18,4 +20,7 @@ data class Sena(
     val categoria: Categoria,
     val orden: Int,
     val disponible: Boolean,
-)
+    val referencia: ReferenciaVisual? = null,
+) {
+    val tieneReferencia: Boolean get() = referencia != null
+}
