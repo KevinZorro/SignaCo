@@ -1,5 +1,6 @@
 package com.ufps.signaco.core.senas.data
 
+import com.ufps.signaco.R
 import com.ufps.signaco.core.senas.domain.ReferenciasVisuales
 import com.ufps.signaco.core.senas.domain.model.ReferenciaVisual
 import javax.inject.Inject
@@ -24,6 +25,11 @@ class ReferenciasEnRecursos @Inject constructor() : ReferenciasVisuales {
     companion object {
         /** Identificador de seña a recurso. Las letras que no están aquí no tienen imagen. */
         val IMAGENES: Map<String, Int> = mapOf(
+            "A" to R.drawable.sena_a,
+            "B" to R.drawable.sena_b,
+            "D" to R.drawable.sena_d,
+            "F" to R.drawable.sena_f,
+            "G" to R.drawable.sena_g,
         )
     }
 }

@@ -19,9 +19,11 @@ este proyecto. No son material de terceros, así que no requieren licencia exter
 
 | Letra | Archivo | Autoría | Seña de LSC contrastada con | Consentimiento de quien aparece (RD05) |
 |---|---|---|---|---|
-| — | — | — | — | — |
-
-_Las filas se agregan junto con cada imagen._
+| A | `drawable-nodpi/sena_a.webp` | Equipo SignaCO | PENDIENTE | PENDIENTE |
+| B | `drawable-nodpi/sena_b.webp` | Equipo SignaCO | PENDIENTE | PENDIENTE |
+| D | `drawable-nodpi/sena_d.webp` | Equipo SignaCO | PENDIENTE | PENDIENTE |
+| F | `drawable-nodpi/sena_f.webp` | Equipo SignaCO | PENDIENTE | PENDIENTE |
+| G | `drawable-nodpi/sena_g.webp` | Equipo SignaCO | PENDIENTE | PENDIENTE |
 
 ## Pendiente
 
@@ -29,4 +31,5 @@ _Las filas se agregan junto con cada imagen._
   (diccionario del INSOR, LSC70 u otro) se contrastó la forma de la mano de cada imagen.
 - **Consentimiento (RD05):** confirmar que la persona cuya mano aparece en las imágenes autorizó
   su uso en la app.
-- Letras activas que todavía no tienen imagen: se agregan siguiendo el mismo procedimiento.
+- Letras activas que todavía no tienen imagen: I, J, L, O, P, Q, R, S, T, U, V, W, X, Y. Se
+  agregan siguiendo el mismo procedimiento.
