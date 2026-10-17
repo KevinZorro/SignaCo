@@ -43,6 +43,7 @@
 La cámara viene en el siguiente paso.</string>
     <string name="detalle_sena_probar">Pruébalo con la cámara</string>
     <string name="cd_letra_grande">Letra %1$s</string>
+    <string name="cd_imagen_de_sena">Imagen de referencia de la seña %1$s</string>
 
     <!-- Primer uso -->
     <string name="primer_uso_titulo">Primero conoce tu mano</string>

@@ -148,6 +148,7 @@ fun DetalleLeccionContenido(
                         letra = sena.sena.letra,
                         nombre = sena.sena.nombre,
                         descripcion = sena.sena.descripcion,
+                        referencia = sena.sena.referencia,
                         onClick = { onSenaSeleccionada(sena.sena.id) },
                         insignia = if (sena.dominada) {
                             {

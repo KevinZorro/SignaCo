@@ -3,6 +3,7 @@ package com.ufps.signaco.feature.diccionario.presentation.teoria
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.componentes.ReferenciaDeSena
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.EstiloNumero
 import com.ufps.signaco.core.ui.theme.Forma
@@ -126,7 +128,11 @@ fun TeoriaSenaContenido(
 /** Superficie tonal lisa, sin cuadrícula ni borde: la cuadrícula es del cuaderno. */
 @Composable
 private fun TarjetaDeTeoria(sena: Sena) {
-    val descripcionDeLetra = stringResource(R.string.cd_letra_grande, sena.letra)
+    val descripcionDeLetra = if (sena.tieneReferencia) {
+        stringResource(R.string.cd_imagen_de_sena, sena.letra)
+    } else {
+        stringResource(R.string.cd_letra_grande, sena.letra)
+    }
     Column(
         verticalArrangement = Arrangement.spacedBy(Espacio.xs),
         modifier = Modifier
@@ -146,13 +152,23 @@ private fun TarjetaDeTeoria(sena: Sena) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = sena.letra,
-            style = EstiloNumero,
-            color = MaterialTheme.colorScheme.primary,
+        // Con imagen ocupa el ancho de la tarjeta en un cuadro; sin imagen queda la letra grande
+        // con su aire de siempre.
+        val forma = if (sena.tieneReferencia) {
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(Forma.contenedor)
+        } else {
+            Modifier.padding(vertical = Espacio.lg)
+        }
+        ReferenciaDeSena(
+            letra = sena.letra,
+            referencia = sena.referencia,
+            estiloDeLetra = EstiloNumero,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(vertical = Espacio.lg)
+                .then(forma)
                 .semantics { contentDescription = descripcionDeLetra },
         )
     }

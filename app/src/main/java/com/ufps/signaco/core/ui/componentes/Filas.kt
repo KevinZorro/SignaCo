@@ -3,7 +3,6 @@ package com.ufps.signaco.core.ui.componentes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import com.ufps.signaco.R
+import com.ufps.signaco.core.senas.domain.model.ReferenciaVisual
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Medida
@@ -99,28 +100,29 @@ fun FilaDeLeccion(
     }
 }
 
-/** La letra de la seña sobre una superficie tonal. La app no tiene imágenes de las señas. */
+/**
+ * La imagen de referencia de la seña, recortada al cuadro, sobre una superficie tonal. Si la
+ * seña todavía no tiene imagen, la letra.
+ */
 @Composable
 fun MiniaturaDeSena(
     letra: String,
     modifier: Modifier = Modifier,
+    referencia: ReferenciaVisual? = null,
     lado: Dp = Medida.miniatura,
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
+    ReferenciaDeSena(
+        letra = letra,
+        referencia = referencia,
+        estiloDeLetra = MaterialTheme.typography.headlineLarge,
+        escala = ContentScale.Crop,
         modifier = modifier
             .size(lado)
             .clip(Forma.pieza)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             // Decorativa: el nombre de la seña ya está en la fila.
             .clearAndSetSemantics {},
-    ) {
-        Text(
-            text = letra,
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }
+    )
 }
 
 /**
@@ -133,6 +135,7 @@ fun FilaDeSena(
     nombre: String,
     descripcion: String,
     modifier: Modifier = Modifier,
+    referencia: ReferenciaVisual? = null,
     onClick: (() -> Unit)? = null,
     insignia: @Composable (() -> Unit)? = null,
 ) {
@@ -146,7 +149,7 @@ fun FilaDeSena(
             .semantics(mergeDescendants = true) {}
             .padding(vertical = Espacio.md),
     ) {
-        MiniaturaDeSena(letra = letra)
+        MiniaturaDeSena(letra = letra, referencia = referencia)
         Column(
             verticalArrangement = Arrangement.spacedBy(Espacio.xxs),
             modifier = Modifier.weight(1f),

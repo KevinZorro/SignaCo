@@ -115,6 +115,7 @@ fun DiccionarioContenido(
                             letra = sena.letra,
                             nombre = sena.nombre,
                             descripcion = sena.descripcion,
+                            referencia = sena.referencia,
                             onClick = { onSenaSeleccionada(sena.id) },
                             insignia = if (sena.disponible) {
                                 null

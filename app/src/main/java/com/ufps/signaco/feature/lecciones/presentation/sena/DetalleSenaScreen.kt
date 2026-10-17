@@ -35,6 +35,7 @@ import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.componentes.ReferenciaDeSena
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.EstiloNumero
 import com.ufps.signaco.core.ui.theme.Forma
@@ -143,12 +144,17 @@ fun DetalleSenaContenido(
 }
 
 /**
- * Donde Figma pone el clip de la seña. La app no tiene clips: se muestra la letra sobre una
- * superficie tonal lisa (la cuadrícula está reservada al cuaderno).
+ * Donde Figma pone el clip de la seña: la imagen de referencia (RF02) sobre una superficie
+ * tonal lisa (la cuadrícula está reservada al cuaderno). Si la seña todavía no tiene imagen,
+ * la letra grande.
  */
 @Composable
 private fun AreaDeLaSena(sena: Sena, subtitulos: Boolean) {
-    val descripcion = stringResource(R.string.cd_letra_grande, sena.letra)
+    val descripcion = if (sena.tieneReferencia) {
+        stringResource(R.string.cd_imagen_de_sena, sena.letra)
+    } else {
+        stringResource(R.string.cd_letra_grande, sena.letra)
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,6 +163,12 @@ private fun AreaDeLaSena(sena: Sena, subtitulos: Boolean) {
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .semantics { contentDescription = descripcion },
     ) {
+        ReferenciaDeSena(
+            letra = sena.letra,
+            referencia = sena.referencia,
+            estiloDeLetra = EstiloNumero,
+            modifier = Modifier.fillMaxSize(),
+        )
         Text(
             text = stringResource(R.string.detalle_sena_practica_conmigo),
             style = MaterialTheme.typography.titleMedium,
@@ -167,12 +179,6 @@ private fun AreaDeLaSena(sena: Sena, subtitulos: Boolean) {
                 .clip(Forma.pildora)
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = Espacio.sm, vertical = Espacio.xxs),
-        )
-        Text(
-            text = sena.letra,
-            style = EstiloNumero,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.align(Alignment.Center),
         )
         if (subtitulos) {
             Text(
