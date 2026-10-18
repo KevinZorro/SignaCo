@@ -56,13 +56,26 @@ object Rutas {
     @Serializable
     data class Quiz(val leccionId: String)
 
-    /** @param senasDelQuiz en el orden en que se preguntaron; [senasFalladas] es un subconjunto. */
+    /**
+     * Parte 2 del quiz (RF15), con lo que dejó la parte 1 para mostrarlo en el resultado.
+     */
+    @Serializable
+    data class QuizCamara(val leccionId: String, val aciertosImagen: Int = 0, val totalImagen: Int = 0)
+
+    /**
+     * @param aciertos y [total] son de la parte de cámara, que es la que aprueba la lección.
+     * @param senasDelQuiz una por pregunta de cámara, en orden y con repeticiones.
+     * @param aciertosPorPregunta uno por pregunta, en el mismo orden.
+     * @param aciertosImagen y [totalImagen] son de la parte 1; total 0 si no la hubo.
+     */
     @Serializable
     data class ResultadoQuiz(
         val leccionId: String,
         val aciertos: Int,
         val total: Int,
         val senasDelQuiz: List<String> = emptyList(),
-        val senasFalladas: List<String> = emptyList(),
+        val aciertosPorPregunta: List<Boolean> = emptyList(),
+        val aciertosImagen: Int = 0,
+        val totalImagen: Int = 0,
     )
 }

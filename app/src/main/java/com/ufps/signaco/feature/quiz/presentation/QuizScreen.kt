@@ -87,7 +87,7 @@ fun QuizContenido(
             BarraSuperior(
                 navegacion = Navegacion.VOLVER,
                 onNavegar = onVolver,
-                titulo = stringResource(R.string.quiz_titulo),
+                titulo = stringResource(R.string.quiz_titulo_imagen),
             )
         },
     ) { relleno ->

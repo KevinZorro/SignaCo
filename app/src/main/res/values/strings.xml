@@ -115,12 +115,22 @@ La cámara viene en el siguiente paso.</string>
 
     <!-- Quiz -->
     <string name="quiz_titulo">Quiz</string>
+    <string name="quiz_titulo_imagen">Quiz · Parte 1 de 2</string>
     <string name="quiz_pregunta_numero">Pregunta %1$d de %2$d</string>
     <string name="quiz_enunciado">¿A qué letra corresponde esta seña?</string>
     <string name="cd_imagen_del_quiz">Imagen de la seña que debes reconocer</string>
     <string name="quiz_siguiente">Siguiente</string>
     <string name="quiz_terminar">Terminar</string>
     <string name="quiz_sin_preguntas">No pudimos armar el quiz de esta lección.</string>
+    <string name="quiz_camara_titulo">Quiz · Pregunta %1$d de %2$d</string>
+    <string name="quiz_camara_letra">Letra %1$s</string>
+    <string name="quiz_camara_indicacion">Haz esta seña frente a la cámara · Intento %1$d de %2$d</string>
+    <string name="quiz_camara_saltar">Saltar pregunta</string>
+    <string name="quiz_camara_intentar_ya">Intentar ya</string>
+    <string name="quiz_camara_fallada">Esta pregunta cuenta como error. La %1$s queda para repasar.</string>
+    <string name="quiz_camara_siguiente">Siguiente pregunta</string>
+    <string name="quiz_camara_ver_resultado">Ver el resultado</string>
+    <string name="quiz_camara_sin_preguntas">Esta lección no tiene letras para el quiz con cámara.</string>
 
     <!-- Resultado del quiz -->
     <string name="resultado_titulo">Resultado</string>
@@ -227,6 +237,10 @@ La cámara viene en el siguiente paso.</string>
         <item>Domingo</item>
     </string-array>
 
+    <plurals name="quiz_camara_quedan">
+        <item quantity="one">Te queda %d intento. La cuenta vuelve a empezar sola.</item>
+        <item quantity="other">Te quedan %d intentos. La cuenta vuelve a empezar sola.</item>
+    </plurals>
     <plurals name="progreso_dias_seguidos">
         <item quantity="one">%1$d día seguido</item>
         <item quantity="other">%1$d días seguidos</item>

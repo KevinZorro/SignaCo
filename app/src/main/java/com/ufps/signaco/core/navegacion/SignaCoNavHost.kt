@@ -16,6 +16,7 @@ import com.ufps.signaco.feature.lecciones.presentation.primeruso.ConoceTuManoScr
 import com.ufps.signaco.feature.lecciones.presentation.sena.DetalleSenaScreen
 import com.ufps.signaco.feature.practica.presentation.PracticaScreen
 import com.ufps.signaco.feature.progreso.presentation.ProgresoScreen
+import com.ufps.signaco.feature.quiz.presentation.QuizCamaraScreen
 import com.ufps.signaco.feature.quiz.presentation.QuizScreen
 import com.ufps.signaco.feature.quiz.presentation.ResultadoQuizScreen
 
@@ -128,8 +129,24 @@ fun SignaCoNavHost(
             )
         }
 
+        // Parte 1: reconocimiento con imagen. Al terminar sigue la parte 2, con cámara.
         composable<Rutas.Quiz> {
             QuizScreen(
+                onVolver = { navController.navigateUp() },
+                onQuizTerminado = { leccionId, resultado ->
+                    navController.navigate(
+                        Rutas.QuizCamara(leccionId, aciertosImagen = resultado.aciertos, totalImagen = resultado.total),
+                    ) {
+                        popUpTo<Rutas.Quiz> { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        // Parte 2 (RF15): hacer las letras frente a la cámara. Su resultado aprueba la lección.
+        composable<Rutas.QuizCamara> { entrada ->
+            val ruta = entrada.toRoute<Rutas.QuizCamara>()
+            QuizCamaraScreen(
                 onVolver = { navController.navigateUp() },
                 onQuizTerminado = { leccionId, resultado ->
                     navController.navigate(
@@ -138,10 +155,12 @@ fun SignaCoNavHost(
                             aciertos = resultado.aciertos,
                             total = resultado.total,
                             senasDelQuiz = resultado.respuestas.map { it.senaId },
-                            senasFalladas = resultado.respuestas.filterNot { it.acerto }.map { it.senaId },
+                            aciertosPorPregunta = resultado.respuestas.map { it.acerto },
+                            aciertosImagen = ruta.aciertosImagen,
+                            totalImagen = ruta.totalImagen,
                         ),
                     ) {
-                        popUpTo<Rutas.Quiz> { inclusive = true }
+                        popUpTo<Rutas.QuizCamara> { inclusive = true }
                     }
                 },
             )

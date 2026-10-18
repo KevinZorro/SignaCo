@@ -41,7 +41,7 @@ class ResultadoQuizViewModel @Inject constructor(
         obtenerDesglose(
             ruta.leccionId,
             ruta.senasDelQuiz,
-            ruta.senasDelQuiz.map { it !in ruta.senasFalladas },
+            ruta.aciertosPorPregunta,
         )
             .map { desglose ->
                 base.copy(
