@@ -292,21 +292,6 @@ class PracticaViewModel @Inject constructor(
         }
     }
 
-    fun siguienteSena() {
-        reanudacionPendiente?.cancel()
-        estabilizador?.reiniciar()
-        estadoDeSesion.update {
-            it.copy(
-                indice = uiState.value.indiceActual + 1,
-                intentoConfirmado = false,
-                avance = 0,
-                puntosDeMano = FloatArray(0),
-                retroalimentacion = EstadoDeRetroalimentacion.Esperando,
-                estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
-            )
-        }
-    }
-
     fun cambiarMostrarPistas(activo: Boolean) {
         viewModelScope.launch { preferenciasRepository.cambiarMostrarPistas(activo) }
     }

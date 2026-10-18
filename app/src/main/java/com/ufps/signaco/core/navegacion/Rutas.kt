@@ -29,8 +29,14 @@ object Rutas {
     @Serializable
     data class DetalleLeccion(val leccionId: String)
 
+    /**
+     * La indicación de una seña antes de la cámara.
+     *
+     * @param enRecorrido true si se llegó con «Empezar práctica»: la cámara sigue luego con las
+     *        demás letras de la lección. False si se tocó la letra en la lista: se practica sola.
+     */
     @Serializable
-    data class DetalleSena(val leccionId: String, val senaId: String)
+    data class DetalleSena(val leccionId: String, val senaId: String, val enRecorrido: Boolean = false)
 
     @Serializable
     data class TeoriaSena(val senaId: String)

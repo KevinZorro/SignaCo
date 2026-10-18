@@ -45,7 +45,8 @@ import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 fun DetalleLeccionScreen(
     onVolver: () -> Unit,
     onSenaSeleccionada: (leccionId: String, senaId: String) -> Unit,
-    onPracticar: (String) -> Unit,
+    /** «Empezar práctica»: recibe la lección y la primera letra practicable. */
+    onPracticar: (leccionId: String, primeraSenaId: String) -> Unit,
     onHacerQuiz: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DetalleLeccionViewModel = hiltViewModel(),
@@ -55,7 +56,9 @@ fun DetalleLeccionScreen(
         uiState = uiState,
         onVolver = onVolver,
         onSenaSeleccionada = { senaId -> onSenaSeleccionada(viewModel.leccionId, senaId) },
-        onPracticar = { onPracticar(viewModel.leccionId) },
+        onPracticar = {
+            uiState.leccion?.primeraSenaParaPracticar?.let { onPracticar(viewModel.leccionId, it) }
+        },
         onHacerQuiz = { onHacerQuiz(viewModel.leccionId) },
         onReintentar = viewModel::reintentar,
         modifier = modifier,

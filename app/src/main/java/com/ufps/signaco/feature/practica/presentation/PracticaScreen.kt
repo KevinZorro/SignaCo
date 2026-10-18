@@ -86,6 +86,8 @@ fun PracticaScreen(
     onVolver: () -> Unit,
     onTerminar: (String) -> Unit,
     onVolverALaLeccion: () -> Unit,
+    /** Lección completa: muestra la indicación de la siguiente letra antes de su cámara. */
+    onSiguienteSena: (leccionId: String, senaId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PracticaViewModel = hiltViewModel(),
 ) {
@@ -114,8 +116,8 @@ fun PracticaScreen(
         onReintentarSena = viewModel::reintentarSena,
         onReintentar = viewModel::reintentar,
         onContinuar = {
-            when (uiState.pasoTrasElAcierto) {
-                is PasoTrasElAcierto.SiguienteSena -> viewModel.siguienteSena()
+            when (val paso = uiState.pasoTrasElAcierto) {
+                is PasoTrasElAcierto.SiguienteSena -> onSiguienteSena(viewModel.leccionId, paso.senaId)
                 PasoTrasElAcierto.TerminarLeccion -> onTerminar(viewModel.leccionId)
                 PasoTrasElAcierto.VolverALaLeccion -> onVolverALaLeccion()
             }

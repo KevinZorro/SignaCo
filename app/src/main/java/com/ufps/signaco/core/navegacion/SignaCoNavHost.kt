@@ -88,7 +88,10 @@ fun SignaCoNavHost(
                 onSenaSeleccionada = { leccionId, senaId ->
                     navController.navigate(Rutas.DetalleSena(leccionId, senaId))
                 },
-                onPracticar = { leccionId -> navController.navigate(Rutas.Practica(leccionId)) },
+                // «Empezar práctica» recorre la lección: primero la indicación de la primera letra.
+                onPracticar = { leccionId, primeraSenaId ->
+                    navController.navigate(Rutas.DetalleSena(leccionId, primeraSenaId, enRecorrido = true))
+                },
                 onHacerQuiz = { leccionId -> navController.navigate(Rutas.Quiz(leccionId)) },
             )
         }
@@ -96,9 +99,12 @@ fun SignaCoNavHost(
         composable<Rutas.DetalleSena> {
             DetalleSenaScreen(
                 onCerrar = { navController.navigateUp() },
-                // Se llegó tocando una letra de la lista: se practica solo esa.
-                onProbarConCamara = { leccionId, senaId ->
-                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = true))
+                // Tocando una letra de la lista se practica solo esa; con «Empezar práctica» la
+                // cámara sigue luego con las demás letras de la lección.
+                onProbarConCamara = { leccionId, senaId, enRecorrido ->
+                    navController.navigate(
+                        Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = !enRecorrido),
+                    )
                 },
             )
         }
@@ -112,6 +118,13 @@ fun SignaCoNavHost(
                     }
                 },
                 onVolverALaLeccion = { navController.volverALaLeccion() },
+                // La indicación de la siguiente letra reemplaza a la indicación y la cámara de la
+                // anterior: así «atrás» siempre lleva a la lección y la pila no crece letra a letra.
+                onSiguienteSena = { leccionId, senaId ->
+                    navController.navigate(Rutas.DetalleSena(leccionId, senaId, enRecorrido = true)) {
+                        popUpTo(Rutas.DetalleLeccion(leccionId))
+                    }
+                },
             )
         }
 

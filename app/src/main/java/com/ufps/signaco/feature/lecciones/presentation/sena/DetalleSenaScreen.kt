@@ -44,7 +44,7 @@ import com.ufps.signaco.core.ui.theme.SignaCoTheme
 @Composable
 fun DetalleSenaScreen(
     onCerrar: () -> Unit,
-    onProbarConCamara: (leccionId: String, senaId: String) -> Unit,
+    onProbarConCamara: (leccionId: String, senaId: String, enRecorrido: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DetalleSenaViewModel = hiltViewModel(),
 ) {
@@ -52,7 +52,9 @@ fun DetalleSenaScreen(
     DetalleSenaContenido(
         uiState = uiState,
         onCerrar = onCerrar,
-        onProbarConCamara = { onProbarConCamara(viewModel.leccionId, viewModel.senaId) },
+        onProbarConCamara = {
+            onProbarConCamara(viewModel.leccionId, viewModel.senaId, viewModel.enRecorrido)
+        },
         onReintentar = viewModel::reintentar,
         modifier = modifier,
     )
