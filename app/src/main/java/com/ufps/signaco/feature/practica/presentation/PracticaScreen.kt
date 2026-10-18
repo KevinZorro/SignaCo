@@ -1,11 +1,5 @@
 package com.ufps.signaco.feature.practica.presentation
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -37,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -55,32 +48,29 @@ import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.core.ui.componentes.BarraSuperior
 import com.ufps.signaco.core.ui.componentes.BotonDeTexto
 import com.ufps.signaco.core.ui.componentes.BotonPrincipal
-import com.ufps.signaco.core.ui.componentes.BotonTonal
-import com.ufps.signaco.core.ui.componentes.CuentaRegresiva
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
-import com.ufps.signaco.core.ui.componentes.EstiloDeMano
 import com.ufps.signaco.core.ui.componentes.HojaDeResultado
 import com.ufps.signaco.core.ui.componentes.MedidorDeCoincidencia
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.componentes.Navegacion
-import com.ufps.signaco.core.ui.componentes.PildoraDeEstado
 import com.ufps.signaco.core.ui.componentes.ProgresoSegmentado
 import com.ufps.signaco.core.ui.componentes.ReferenciaDeSena
 import com.ufps.signaco.core.ui.componentes.Sello
 import com.ufps.signaco.core.ui.componentes.TarjetaDePalabra
-import com.ufps.signaco.core.ui.componentes.TonoDePildora
-import com.ufps.signaco.core.ui.componentes.marcoDeCamara
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.Movimiento
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.core.ui.theme.fuenteGrande
-import com.ufps.signaco.core.ui.theme.signaCoColores
 import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
 import com.ufps.signaco.feature.practica.domain.model.PasoTrasElAcierto
-import com.ufps.signaco.feature.practica.presentation.camara.CapaDeMano
+import com.ufps.signaco.feature.practica.presentation.camara.esperaRecomendadaParaLeer
+import com.ufps.signaco.feature.practica.presentation.camara.abrirAjustesDeLaApp
+import com.ufps.signaco.feature.practica.presentation.camara.VisorDeCamara
+import com.ufps.signaco.feature.practica.presentation.camara.ResultadoDelIntento
+import com.ufps.signaco.feature.practica.presentation.camara.ControlDeCaptura
 import com.ufps.signaco.feature.practica.presentation.camara.PantallaDePermiso
 import com.ufps.signaco.feature.practica.presentation.camara.VistaPreviaDeCamara
 import com.ufps.signaco.feature.practica.presentation.camara.rememberSolicitudDePermisoDeCamara
@@ -271,7 +261,7 @@ private fun Practica(
                 }
             },
             bottomBar = {
-                if (resultado == Resultado.NINGUNO) {
+                if (resultado == ResultadoDelIntento.NINGUNO) {
                     ControlDeCaptura(
                         capturando = uiState.capturando,
                         contando = uiState.contando,
@@ -317,7 +307,7 @@ private fun Practica(
                     }
                 }
                 VisorDeCamara(
-                    uiState = uiState,
+                    estado = uiState.estadoDelVisor,
                     resultado = resultado,
                     vistaDeCamara = vistaDeCamara,
                     modifier = Modifier
@@ -328,7 +318,7 @@ private fun Practica(
         }
 
         AnimatedVisibility(
-            visible = resultado != Resultado.NINGUNO,
+            visible = resultado != ResultadoDelIntento.NINGUNO,
             enter = if (uiState.reducirAnimaciones) {
                 EnterTransition.None
             } else {
@@ -340,7 +330,7 @@ private fun Practica(
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             HojaDeResultado(Modifier.navigationBarsPadding()) {
-                if (resultado == Resultado.ACIERTO) {
+                if (resultado == ResultadoDelIntento.ACIERTO) {
                     ContenidoDeAcierto(uiState, sena, onContinuar, onReintentarSena)
                 } else {
                     ContenidoDeFallo(uiState, onReintentarSena)
@@ -350,176 +340,10 @@ private fun Practica(
     }
 }
 
-/** La hoja de resultado solo sale con un intento confirmado; mientras tanto la cámara manda. */
-private enum class Resultado { NINGUNO, ACIERTO, FALLO }
-
-private fun resultadoDe(uiState: PracticaUiState): Resultado = when {
-    !uiState.intentoConfirmado -> Resultado.NINGUNO
-    uiState.retroalimentacion is EstadoDeRetroalimentacion.Acertada -> Resultado.ACIERTO
-    else -> Resultado.FALLO
-}
-
-/** RF10: un control único para iniciar y detener. Detener es tonal: no compite con la cámara. */
-@Composable
-private fun ControlDeCaptura(
-    capturando: Boolean,
-    contando: Boolean,
-    onAlternarCaptura: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (contando) {
-        // Durante la cuenta regresiva el mismo control la cancela, por si la persona no está lista.
-        BotonTonal(
-            texto = stringResource(R.string.practica_cancelar_cuenta),
-            onClick = onAlternarCaptura,
-            icono = R.drawable.ic_close,
-            modifier = modifier.fillMaxWidth(),
-        )
-    } else if (capturando) {
-        BotonTonal(
-            texto = stringResource(R.string.practica_detener),
-            onClick = onAlternarCaptura,
-            icono = R.drawable.ic_stop,
-            modifier = modifier.fillMaxWidth(),
-        )
-    } else {
-        BotonPrincipal(
-            texto = stringResource(R.string.practica_iniciar_intento),
-            onClick = onAlternarCaptura,
-            icono = R.drawable.ic_circle,
-            modifier = modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
-private fun VisorDeCamara(
-    uiState: PracticaUiState,
-    resultado: Resultado,
-    vistaDeCamara: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colores = MaterialTheme.signaCoColores
-    val papel = MaterialTheme.colorScheme.surface
-    // Amarillo en los puntos solo mientras se reconoce; en el fallo vuelven a neutro.
-    val estiloDeMano = when (resultado) {
-        Resultado.ACIERTO -> EstiloDeMano(linea = papel, relleno = papel, contorno = MaterialTheme.colorScheme.primary)
-        Resultado.FALLO -> EstiloDeMano(linea = papel, relleno = colores.borde, contorno = papel)
-        Resultado.NINGUNO -> EstiloDeMano(linea = papel, relleno = colores.resaltador, contorno = colores.camaraBaja)
-    }
-
-    Box(
-        modifier = modifier
-            .clip(Forma.contenedorGrande)
-            .background(Brush.verticalGradient(listOf(colores.camaraAlta, colores.camaraBaja))),
-    ) {
-        vistaDeCamara()
-        CapaDeMano(
-            puntos = uiState.puntosDeMano,
-            proporcionDeImagen = uiState.proporcionDeImagen,
-            estilo = estiloDeMano,
-            modifier = Modifier.fillMaxSize(),
-        )
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(start = Espacio.lg, end = Espacio.lg, top = Espacio.xxl + Espacio.md, bottom = Espacio.lg)
-                .marcoDeCamara(colores.cuadricula),
-        )
-        // Píldora arriba y panel abajo en una columna: con la fuente grande el visor se achica
-        // y así nunca se montan uno sobre otro.
-        Column(
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(Espacio.md),
-        ) {
-            Pildora(uiState, resultado)
-            if (resultado == Resultado.NINGUNO && uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO) {
-                PanelDeCoincidencia(coincidencia = uiState.coincidencia, umbral = uiState.umbral)
-            }
-        }
-        uiState.cuentaRegresiva?.let { segundos ->
-            CuentaRegresiva(segundos = segundos, modifier = Modifier.align(Alignment.Center))
-        }
-    }
-}
-
-/** RF09: el estado del reconocimiento se ve siempre, con texto además del color. */
-@Composable
-private fun Pildora(uiState: PracticaUiState, resultado: Resultado, modifier: Modifier = Modifier) {
-    when {
-        resultado == Resultado.ACIERTO -> PildoraDeEstado(
-            texto = stringResource(R.string.practica_sena_confirmada),
-            tono = TonoDePildora.CONFIRMADA,
-            icono = R.drawable.ic_check,
-            modifier = modifier,
-        )
-        resultado == Resultado.FALLO ||
-            uiState.retroalimentacion == EstadoDeRetroalimentacion.NoReconocida -> PildoraDeEstado(
-            texto = stringResource(R.string.practica_sin_coincidencia),
-            tono = TonoDePildora.NEUTRA,
-            icono = R.drawable.ic_close,
-            modifier = modifier,
-        )
-        !uiState.capturando -> PildoraDeEstado(
-            texto = stringResource(R.string.practica_camara_lista),
-            tono = TonoDePildora.NEUTRA,
-            modifier = modifier,
-        )
-        uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO -> PildoraDeEstado(
-            texto = stringResource(R.string.practica_estado_reconociendo),
-            tono = TonoDePildora.ACTIVA,
-            modifier = modifier,
-        )
-        else -> PildoraDeEstado(
-            texto = stringResource(R.string.practica_estado_buscando_manos),
-            tono = TonoDePildora.ACTIVA,
-            modifier = modifier,
-        )
-    }
-}
-
-@Composable
-private fun PanelDeCoincidencia(coincidencia: Float, umbral: Float, modifier: Modifier = Modifier) {
-    val papel = MaterialTheme.colorScheme.surface
-    val porcentaje = (coincidencia * 100).roundToInt()
-    val umbralEnPorcentaje = (umbral * 100).roundToInt()
-    Column(
-        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(Forma.contenedor)
-            .background(MaterialTheme.signaCoColores.panelCamara.copy(alpha = OPACIDAD_DEL_PANEL))
-            .padding(Espacio.md),
-    ) {
-        Row {
-            Text(
-                text = stringResource(R.string.practica_coincidencia),
-                style = MaterialTheme.typography.titleMedium,
-                color = papel,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = stringResource(R.string.practica_porcentaje, porcentaje),
-                style = MaterialTheme.typography.titleMedium,
-                color = papel,
-            )
-        }
-        MedidorDeCoincidencia(
-            coincidencia = coincidencia,
-            umbral = umbral,
-            descripcionAccesible = stringResource(R.string.cd_coincidencia, porcentaje, umbralEnPorcentaje),
-            pista = papel.copy(alpha = OPACIDAD_DE_LA_PISTA),
-            relleno = papel,
-            marca = papel,
-        )
-        Text(
-            text = stringResource(R.string.practica_umbral, umbralEnPorcentaje),
-            style = MaterialTheme.typography.bodyLarge,
-            color = papel,
-        )
-    }
+private fun resultadoDe(uiState: PracticaUiState): ResultadoDelIntento = when {
+    !uiState.intentoConfirmado -> ResultadoDelIntento.NINGUNO
+    uiState.retroalimentacion is EstadoDeRetroalimentacion.Acertada -> ResultadoDelIntento.ACIERTO
+    else -> ResultadoDelIntento.FALLO
 }
 
 @Composable
@@ -628,17 +452,6 @@ private fun MedidorDelFallo(uiState: PracticaUiState) {
     }
 }
 
-private fun Context.abrirAjustesDeLaApp() {
-    runCatching {
-        startActivity(
-            Intent(
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.fromParts("package", packageName, null),
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
-    }
-}
-
 /** El texto del botón tras acertar, según a dónde lleve. */
 private fun textoDelPaso(paso: PasoTrasElAcierto): Int = when (paso) {
     is PasoTrasElAcierto.SiguienteSena -> R.string.practica_siguiente
@@ -651,24 +464,6 @@ private fun textoDelError(error: ErrorDeReconocimiento): Int = when (error) {
     ErrorDeReconocimiento.MODELO -> R.string.practica_error_modelo
     ErrorDeReconocimiento.CONFIGURACION -> R.string.practica_error_configuracion
 }
-
-/**
- * Tiempo que el sistema recomienda dejar un texto en pantalla, partiendo de [base]. Devuelve
- * más si la persona tiene subido el ajuste de accesibilidad "tiempo para realizar una acción".
- * Por debajo de Android 10 esa API no existe y se usa [base] tal cual.
- */
-private fun Context.esperaRecomendadaParaLeer(base: Long): Long {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return base
-    val gestor = getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
-        ?: return base
-    return gestor.getRecommendedTimeoutMillis(
-        base.toInt(),
-        AccessibilityManager.FLAG_CONTENT_TEXT,
-    ).toLong()
-}
-
-private const val OPACIDAD_DEL_PANEL = 0.85f
-private const val OPACIDAD_DE_LA_PISTA = 0.25f
 
 // --- Previews: un estado por pantalla de Figma (04 a 08), con la palabra más larga. ---
 
