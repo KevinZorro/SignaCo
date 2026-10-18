@@ -217,9 +217,9 @@ private fun ResultadoQuizPreview() {
                 aprobado = true,
                 tituloDeLeccion = "Consonantes S, T, V, W, X y Y",
                 senas = listOf(
-                    SenaCalificada(sena("S"), acerto = true, dominada = false),
-                    SenaCalificada(sena("T"), acerto = true, dominada = true),
-                    SenaCalificada(sena("W"), acerto = false, dominada = false),
+                    SenaCalificada(sena("S"), preguntas = 2, aciertos = 2, dominada = false),
+                    SenaCalificada(sena("T"), preguntas = 2, aciertos = 2, dominada = true),
+                    SenaCalificada(sena("W"), preguntas = 1, aciertos = 0, dominada = false),
                 ),
             ),
             onRepetirQuiz = {},

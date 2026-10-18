@@ -38,7 +38,11 @@ class ResultadoQuizViewModel @Inject constructor(
     )
 
     val uiState: StateFlow<ResultadoQuizUiState> =
-        obtenerDesglose(ruta.leccionId, ruta.senasDelQuiz, ruta.senasFalladas)
+        obtenerDesglose(
+            ruta.leccionId,
+            ruta.senasDelQuiz,
+            ruta.senasDelQuiz.map { it !in ruta.senasFalladas },
+        )
             .map { desglose ->
                 base.copy(
                     tituloDeLeccion = desglose?.tituloDeLeccion.orEmpty(),
