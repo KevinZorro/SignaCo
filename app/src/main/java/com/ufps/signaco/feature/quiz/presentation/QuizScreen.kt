@@ -1,8 +1,10 @@
 package com.ufps.signaco.feature.quiz.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -19,18 +21,23 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
+import com.ufps.signaco.core.senas.domain.model.ReferenciaVisual
 import com.ufps.signaco.core.ui.componentes.BarraSuperior
 import com.ufps.signaco.core.ui.componentes.BotonPrincipal
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.core.ui.componentes.ReferenciaDeSena
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
 import com.ufps.signaco.core.ui.theme.Medida
@@ -119,17 +126,20 @@ fun QuizContenido(
                     text = stringResource(R.string.quiz_enunciado),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = Forma.contenedor,
-                ) {
-                    Text(
-                        text = pregunta.enunciado,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(Espacio.md),
-                    )
-                }
+                // La descripción accesible no nombra la letra: sería darle la respuesta a TalkBack.
+                val descripcionDeLaImagen = stringResource(R.string.cd_imagen_del_quiz)
+                ReferenciaDeSena(
+                    letra = "",
+                    referencia = pregunta.referencia,
+                    estiloDeLetra = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .aspectRatio(1f)
+                        .clip(Forma.contenedor)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .semantics { contentDescription = descripcionDeLaImagen },
+                )
 
                 Column(
                     modifier = Modifier.fillMaxWidth().selectableGroup(),
@@ -210,7 +220,7 @@ private fun QuizPreview() {
                 preguntas = listOf(
                     PreguntaQuiz(
                         senaId = "A",
-                        enunciado = "Puño cerrado con el pulgar extendido al costado.",
+                        referencia = ReferenciaVisual.Imagen(R.drawable.sena_a),
                         letraCorrecta = "A",
                         opciones = listOf("A", "E", "M", "S"),
                     ),
