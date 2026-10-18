@@ -15,6 +15,7 @@ import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
 import com.ufps.signaco.feature.practica.domain.model.ResultadoDeFrame
 import com.ufps.signaco.feature.practica.domain.model.ResultadoIntento
 import com.ufps.signaco.feature.practica.domain.usecase.CrearEstabilizadorUseCase
+import com.ufps.signaco.feature.practica.domain.usecase.CuentaRegresivaUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.DecidirPasoTrasElAciertoUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerSenasParaPracticarUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerUmbralDeSenaUseCase
@@ -53,6 +54,7 @@ class PracticaViewModel @Inject constructor(
     private val crearEstabilizador: CrearEstabilizadorUseCase,
     private val obtenerUmbral: ObtenerUmbralDeSenaUseCase,
     private val decidirPasoTrasElAcierto: DecidirPasoTrasElAciertoUseCase,
+    private val cuentaRegresiva: CuentaRegresivaUseCase,
 ) : ViewModel() {
 
     private val ruta = savedStateHandle.toRoute<Rutas.Practica>()
@@ -72,6 +74,9 @@ class PracticaViewModel @Inject constructor(
 
     /** La reanudación pendiente tras un intento fallido. Ver [programarReanudacion]. */
     private var reanudacionPendiente: Job? = null
+
+    /** La cuenta regresiva en curso antes de un intento. Ver [iniciarCuentaRegresiva]. */
+    private var cuentaEnCurso: Job? = null
 
     /**
      * Cuánto se deja la retroalimentación en pantalla antes de reanudar sola. La pantalla la
@@ -189,7 +194,9 @@ class PracticaViewModel @Inject constructor(
      * pose cambia, o si se baja la mano y se vuelve a subir, que es justo lo que es un intento
      * nuevo. Reiniciarlo aquí llenaría el progreso de fallos repetidos por estar quieto.
      *
-     * El botón de reintentar se queda: reanuda en el acto, sin esperar.
+     * El botón de reintentar se queda: reanuda en el acto, sin esperar la lectura.
+     *
+     * En los dos casos el intento nuevo empieza tras la cuenta regresiva de 3 segundos.
      */
     private fun programarReanudacion(resultado: ResultadoDeFrame) {
         if (resultado !is ResultadoDeFrame.Confirmado) return
@@ -198,18 +205,9 @@ class PracticaViewModel @Inject constructor(
         reanudacionPendiente?.cancel()
         reanudacionPendiente = viewModelScope.launch {
             delay(esperaAntesDeReanudar)
-            estadoDeSesion.update { sesion ->
-                // Si mientras tanto se avanzó, se reintentó a mano o se paró la captura, no hay
-                // nada que reanudar.
-                if (!sesion.intentoConfirmado) {
-                    sesion
-                } else {
-                    sesion.copy(
-                        intentoConfirmado = false,
-                        estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
-                    )
-                }
-            }
+            // Si mientras tanto se reintentó a mano o se paró la captura, no hay nada que
+            // reanudar. Si no, el nuevo intento arranca con la misma cuenta regresiva.
+            if (estadoDeSesion.value.intentoConfirmado) iniciarCuentaRegresiva()
         }
     }
 
@@ -221,9 +219,17 @@ class PracticaViewModel @Inject constructor(
         esperaAntesDeReanudar = milisegundos.coerceAtLeast(ESPERA_POR_DEFECTO_MS)
     }
 
-    /** RF10: el mismo control inicia y detiene la captura. */
+    /**
+     * RF10: el mismo control inicia y detiene la captura. Durante la cuenta regresiva, ese
+     * control la cancela; después, «Iniciar intento» queda de respaldo y arranca en el acto.
+     */
     fun alternarCaptura() {
         reanudacionPendiente?.cancel()
+        if (estadoDeSesion.value.cuentaRegresiva != null && !estadoDeSesion.value.capturando) {
+            cancelarCuentaRegresiva()
+            return
+        }
+        cuentaEnCurso?.cancel()
         estadoDeSesion.update { sesion ->
             val capturando = !sesion.capturando
             if (!capturando) estabilizador?.reiniciar()
@@ -236,6 +242,58 @@ class PracticaViewModel @Inject constructor(
                 },
                 retroalimentacion = EstadoDeRetroalimentacion.Esperando,
                 puntosDeMano = FloatArray(0),
+                cuentaRegresiva = null,
+            )
+        }
+    }
+
+    /**
+     * Cuenta 3, 2, 1 sobre la cámara y al terminar empieza el intento solo, para que la persona
+     * no tenga que acordarse de tocar «Iniciar intento». Mientras cuenta no se analizan frames:
+     * la captura se enciende justo al llegar a cero.
+     */
+    private fun iniciarCuentaRegresiva() {
+        cuentaEnCurso?.cancel()
+        reanudacionPendiente?.cancel()
+        estadoDeSesion.update {
+            it.copy(
+                capturando = false,
+                intentoConfirmado = false,
+                avance = 0,
+                retroalimentacion = EstadoDeRetroalimentacion.Esperando,
+                estadoDeReconocimiento = EstadoDeReconocimiento.SIN_DETECCION,
+                puntosDeMano = FloatArray(0),
+                cuentaRegresiva = CuentaRegresivaUseCase.SEGUNDOS,
+            )
+        }
+        cuentaEnCurso = viewModelScope.launch {
+            cuentaRegresiva().collect { restantes ->
+                estadoDeSesion.update { sesion ->
+                    if (restantes == CuentaRegresivaUseCase.INICIO) {
+                        sesion.copy(
+                            cuentaRegresiva = restantes,
+                            capturando = true,
+                            estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
+                        )
+                    } else {
+                        sesion.copy(cuentaRegresiva = restantes)
+                    }
+                }
+            }
+            // El «¡Ya!» se deja un momento en pantalla para que se lea y TalkBack lo anuncie.
+            delay(DURACION_DEL_INICIO_MS)
+            estadoDeSesion.update { it.copy(cuentaRegresiva = null) }
+        }
+    }
+
+    /** La persona no estaba lista: se detiene la cuenta y queda «Iniciar intento». */
+    fun cancelarCuentaRegresiva() {
+        cuentaEnCurso?.cancel()
+        estadoDeSesion.update {
+            it.copy(
+                cuentaRegresiva = null,
+                capturando = false,
+                estadoDeReconocimiento = EstadoDeReconocimiento.SIN_DETECCION,
             )
         }
     }
@@ -247,15 +305,17 @@ class PracticaViewModel @Inject constructor(
     }
 
     fun alResponderElPermiso(concedido: Boolean) {
+        // Responder dos veces (al volver de ajustes, por ejemplo) no reinicia una cuenta en curso.
+        if (concedido && estadoDeSesion.value.permiso == EstadoDelPermiso.CONCEDIDO) return
         estadoDeSesion.update {
-            // Con el permiso concedido la cámara queda lista, pero el intento lo inicia la
-            // persona con el botón de iniciar.
             it.copy(
                 permiso = if (concedido) EstadoDelPermiso.CONCEDIDO else EstadoDelPermiso.DENEGADO,
                 capturando = false,
                 estadoDeReconocimiento = EstadoDeReconocimiento.SIN_DETECCION,
             )
         }
+        // Con la cámara lista, el primer intento arranca solo tras la cuenta regresiva.
+        if (concedido) iniciarCuentaRegresiva()
     }
 
     fun informarErrorDeCamara() {
@@ -268,28 +328,14 @@ class PracticaViewModel @Inject constructor(
     fun reintentar() {
         reanudacionPendiente?.cancel()
         estabilizador?.reiniciar()
-        estadoDeSesion.update {
-            it.copy(
-                error = null,
-                intentoConfirmado = false,
-                capturando = it.permiso == EstadoDelPermiso.CONCEDIDO,
-                retroalimentacion = EstadoDeRetroalimentacion.Esperando,
-            )
-        }
+        estadoDeSesion.update { it.copy(error = null) }
+        if (estadoDeSesion.value.permiso == EstadoDelPermiso.CONCEDIDO) iniciarCuentaRegresiva()
     }
 
     /** RF13: reintentar la misma seña sin salir de la lección. */
     fun reintentarSena() {
-        reanudacionPendiente?.cancel()
         estabilizador?.reiniciar()
-        estadoDeSesion.update {
-            it.copy(
-                intentoConfirmado = false,
-                avance = 0,
-                retroalimentacion = EstadoDeRetroalimentacion.Esperando,
-                estadoDeReconocimiento = EstadoDeReconocimiento.BUSCANDO_MANOS,
-            )
-        }
+        iniciarCuentaRegresiva()
     }
 
     fun cambiarMostrarPistas(activo: Boolean) {
@@ -323,6 +369,7 @@ class PracticaViewModel @Inject constructor(
             umbral = sesion.umbral,
             puntosDeMano = sesion.puntosDeMano,
             proporcionDeImagen = sesion.proporcionDeImagen,
+            cuentaRegresiva = sesion.cuentaRegresiva,
             reducirAnimaciones = preferencias.reducirAnimaciones,
             soloEstaSena = ruta.soloEstaSena,
             pasoTrasElAcierto = decidirPasoTrasElAcierto(
@@ -362,6 +409,7 @@ class PracticaViewModel @Inject constructor(
         val umbral: Float = 0f,
         val puntosDeMano: FloatArray = FloatArray(0),
         val proporcionDeImagen: Float = 0f,
+        val cuentaRegresiva: Int? = null,
     )
 
     companion object {
@@ -370,6 +418,9 @@ class PracticaViewModel @Inject constructor(
          * aquí para preguntarle al sistema el tiempo recomendado, que puede ser mayor.
          */
         const val ESPERA_POR_DEFECTO_MS = 1_200L
+
+        /** Cuánto queda el «¡Ya!» en pantalla tras la cuenta. */
+        const val DURACION_DEL_INICIO_MS = 800L
 
         private const val ETIQUETA = "Practica"
         private const val INDICE_SIN_ELEGIR = -1

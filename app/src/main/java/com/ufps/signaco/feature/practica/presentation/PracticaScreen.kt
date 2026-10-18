@@ -56,6 +56,7 @@ import com.ufps.signaco.core.ui.componentes.BarraSuperior
 import com.ufps.signaco.core.ui.componentes.BotonDeTexto
 import com.ufps.signaco.core.ui.componentes.BotonPrincipal
 import com.ufps.signaco.core.ui.componentes.BotonTonal
+import com.ufps.signaco.core.ui.componentes.CuentaRegresiva
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
 import com.ufps.signaco.core.ui.componentes.EstadoDeError
 import com.ufps.signaco.core.ui.componentes.EstiloDeMano
@@ -273,6 +274,7 @@ private fun Practica(
                 if (resultado == Resultado.NINGUNO) {
                     ControlDeCaptura(
                         capturando = uiState.capturando,
+                        contando = uiState.contando,
                         onAlternarCaptura = onAlternarCaptura,
                         modifier = Modifier
                             .navigationBarsPadding()
@@ -359,8 +361,21 @@ private fun resultadoDe(uiState: PracticaUiState): Resultado = when {
 
 /** RF10: un control único para iniciar y detener. Detener es tonal: no compite con la cámara. */
 @Composable
-private fun ControlDeCaptura(capturando: Boolean, onAlternarCaptura: () -> Unit, modifier: Modifier = Modifier) {
-    if (capturando) {
+private fun ControlDeCaptura(
+    capturando: Boolean,
+    contando: Boolean,
+    onAlternarCaptura: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (contando) {
+        // Durante la cuenta regresiva el mismo control la cancela, por si la persona no está lista.
+        BotonTonal(
+            texto = stringResource(R.string.practica_cancelar_cuenta),
+            onClick = onAlternarCaptura,
+            icono = R.drawable.ic_close,
+            modifier = modifier.fillMaxWidth(),
+        )
+    } else if (capturando) {
         BotonTonal(
             texto = stringResource(R.string.practica_detener),
             onClick = onAlternarCaptura,
@@ -423,6 +438,9 @@ private fun VisorDeCamara(
             if (resultado == Resultado.NINGUNO && uiState.estadoDeReconocimiento == EstadoDeReconocimiento.RECONOCIENDO) {
                 PanelDeCoincidencia(coincidencia = uiState.coincidencia, umbral = uiState.umbral)
             }
+        }
+        uiState.cuentaRegresiva?.let { segundos ->
+            CuentaRegresiva(segundos = segundos, modifier = Modifier.align(Alignment.Center))
         }
     }
 }

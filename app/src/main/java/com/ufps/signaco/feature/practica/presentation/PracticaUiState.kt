@@ -66,6 +66,11 @@ data class PracticaUiState(
     val puntosDeMano: FloatArray = FloatArray(0),
     val proporcionDeImagen: Float = 0f,
     val reducirAnimaciones: Boolean = false,
+    /**
+     * Segundos que faltan para que el intento empiece solo (3, 2, 1), 0 justo al empezar y null
+     * si no hay cuenta en pantalla.
+     */
+    val cuentaRegresiva: Int? = null,
 
     /** True si se practica una letra suelta elegida de la lista de la lección. */
     val soloEstaSena: Boolean = false,
@@ -75,6 +80,9 @@ data class PracticaUiState(
     val senaActual: Sena? get() = senas.getOrNull(indiceActual)
 
     val esLaUltima: Boolean get() = senas.isNotEmpty() && indiceActual >= senas.lastIndex
+
+    /** La cuenta regresiva está en 3, 2 o 1: el intento todavía no empezó. */
+    val contando: Boolean get() = (cuentaRegresiva ?: 0) > 0
 
     val sinSenas: Boolean get() = !cargando && !hayError && senas.isEmpty()
 

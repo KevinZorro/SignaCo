@@ -77,6 +77,11 @@ La cámara viene en el siguiente paso.</string>
     <string name="practica_umbral">Se confirma desde el %1$d %%</string>
     <string name="practica_iniciar_intento">Iniciar intento</string>
     <string name="practica_detener">Detener</string>
+    <string name="practica_cancelar_cuenta">No estoy listo</string>
+    <string name="cuenta_regresiva_preparate">Prepárate</string>
+    <string name="cuenta_regresiva_inicio">¡Ya!</string>
+    <string name="cuenta_regresiva_anuncio">El intento empieza en %1$d</string>
+    <string name="cuenta_regresiva_inicio_anuncio">Intento iniciado. Haz la seña frente a la cámara.</string>
     <string name="practica_acertaste">¡Acertaste!</string>
     <string name="practica_acierto_detalle">%1$s, con %2$d %% de coincidencia.</string>
     <string name="practica_no_reconocimos">No reconocimos la seña</string>
