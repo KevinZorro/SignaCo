@@ -1,5 +1,6 @@
 package com.ufps.signaco.feature.quiz
 
+import com.ufps.signaco.fakes.imagenDePrueba
 import com.ufps.signaco.feature.quiz.domain.model.PreguntaQuiz
 import com.ufps.signaco.feature.quiz.domain.usecase.CalificarQuizUseCase
 import org.junit.Assert.assertEquals
@@ -70,7 +71,7 @@ class CalificarQuizUseCaseTest {
 
     private fun pregunta(letra: String) = PreguntaQuiz(
         senaId = letra,
-        enunciado = "Descripción de $letra",
+        referencia = imagenDePrueba(letra),
         letraCorrecta = letra,
         opciones = listOf(letra, "X", "Y", "Z"),
     )

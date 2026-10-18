@@ -5,6 +5,7 @@ import com.ufps.signaco.core.reconocimiento.domain.ResultadoClasificacion
 import com.ufps.signaco.core.reconocimiento.domain.SignClassifier
 import com.ufps.signaco.core.senas.domain.SenaRepository
 import com.ufps.signaco.core.senas.domain.model.Categoria
+import com.ufps.signaco.core.senas.domain.model.ReferenciaVisual
 import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.feature.lecciones.domain.LeccionRepository
 import com.ufps.signaco.feature.lecciones.domain.model.Leccion
@@ -121,6 +122,7 @@ fun senaDePrueba(
     orden: Int = 1,
     categoria: Categoria = Categoria.VOCALES,
     disponible: Boolean = true,
+    referencia: ReferenciaVisual? = null,
 ) = Sena(
     id = id,
     letra = id,
@@ -129,7 +131,11 @@ fun senaDePrueba(
     categoria = categoria,
     orden = orden,
     disponible = disponible,
+    referencia = referencia,
 )
+
+/** Una imagen de referencia inventada: en las pruebas basta con que no sea null. */
+fun imagenDePrueba(id: String) = ReferenciaVisual.Imagen(id.hashCode())
 
 fun leccionDePrueba(
     id: String,
