@@ -35,6 +35,8 @@ class ResultadoQuizViewModel @Inject constructor(
         aciertos = ruta.aciertos,
         total = ruta.total,
         aprobado = ResultadoQuiz(ruta.aciertos, ruta.total).aprobado,
+        aciertosImagen = ruta.aciertosImagen,
+        totalImagen = ruta.totalImagen,
     )
 
     val uiState: StateFlow<ResultadoQuizUiState> =

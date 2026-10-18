@@ -119,6 +119,20 @@ fun ResultadoQuizContenido(
                 .fillMaxSize(),
         ) {
             item(key = "puntaje") { Puntaje(uiState) }
+            if (uiState.totalImagen > 0) {
+                item(key = "imagen") {
+                    Text(
+                        text = stringResource(
+                            R.string.resultado_parte_imagen,
+                            uiState.aciertosImagen,
+                            uiState.totalImagen,
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = Espacio.xs),
+                    )
+                }
+            }
             item(key = "detalle") {
                 Text(
                     text = stringResource(
@@ -179,12 +193,19 @@ private fun FilaDeRespuesta(calificada: SenaCalificada, onRepasar: () -> Unit) {
             contentDescription = estado,
             tint = if (calificada.acerto) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
         )
-        Text(
-            text = calificada.sena.nombre,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f),
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = calificada.sena.nombre,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            // Una letra puede salir varias veces en el quiz con cámara: cuántas la hizo bien.
+            Text(
+                text = stringResource(R.string.resultado_aciertos_de, calificada.aciertos, calificada.preguntas),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         when {
             !calificada.acerto -> BotonDeTexto(
                 texto = stringResource(R.string.resultado_repasar),
@@ -215,6 +236,8 @@ private fun ResultadoQuizPreview() {
                 aciertos = 4,
                 total = 5,
                 aprobado = true,
+                aciertosImagen = 3,
+                totalImagen = 4,
                 tituloDeLeccion = "Consonantes S, T, V, W, X y Y",
                 senas = listOf(
                     SenaCalificada(sena("S"), preguntas = 2, aciertos = 2, dominada = false),

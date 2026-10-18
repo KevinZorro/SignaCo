@@ -135,14 +135,16 @@ La cámara viene en el siguiente paso.</string>
     <!-- Resultado del quiz -->
     <string name="resultado_titulo">Resultado</string>
     <string name="resultado_detalle_aprobado">Ya puedes seguir con la siguiente lección.</string>
-    <string name="resultado_detalle_reprobado">Practica un poco más y vuelve a intentarlo.</string>
+    <string name="resultado_detalle_reprobado">Para aprobar la lección necesitas el 70 \u0025 con la cámara. Practica un poco más y vuelve a intentarlo.</string>
     <string name="resultado_repetir">Repetir el quiz</string>
     <string name="resultado_titulo_quiz">Quiz de %1$s</string>
-    <string name="resultado_de_total">de %1$d aciertos</string>
+    <string name="resultado_de_total">de %1$d con la cámara</string>
     <string name="resultado_acertada">Acertada</string>
+    <string name="resultado_parte_imagen">Reconocimiento con imagen: %1$d de %2$d</string>
+    <string name="resultado_aciertos_de">%1$d de %2$d con la cámara</string>
     <string name="resultado_repasar">Repasar</string>
     <string name="resultado_ver_progreso">Ver mi progreso</string>
-    <string name="cd_resultado_puntaje">%1$d de %2$d aciertos</string>
+    <string name="cd_resultado_puntaje">%1$d de %2$d aciertos con la cámara</string>
     <string name="cd_respuesta_acertada">Acertada</string>
     <string name="cd_respuesta_fallada">Fallada</string>
 
