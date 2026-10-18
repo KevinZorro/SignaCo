@@ -30,6 +30,20 @@ class ReferenciasEnRecursos @Inject constructor() : ReferenciasVisuales {
             "D" to R.drawable.sena_d,
             "F" to R.drawable.sena_f,
             "G" to R.drawable.sena_g,
+            "I" to R.drawable.sena_i,
+            "J" to R.drawable.sena_j,
+            "L" to R.drawable.sena_l,
+            "O" to R.drawable.sena_o,
+            "P" to R.drawable.sena_p,
+            "Q" to R.drawable.sena_q,
+            "R" to R.drawable.sena_r,
+            "S" to R.drawable.sena_s,
+            "T" to R.drawable.sena_t,
+            "U" to R.drawable.sena_u,
+            "V" to R.drawable.sena_v,
+            "W" to R.drawable.sena_w,
+            "X" to R.drawable.sena_x,
+            "Y" to R.drawable.sena_y,
         )
     }
 }
