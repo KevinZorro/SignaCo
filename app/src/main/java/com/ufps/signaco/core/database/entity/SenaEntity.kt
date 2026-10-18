@@ -9,7 +9,6 @@ data class SenaEntity(
     @PrimaryKey val id: String,
     val letra: String,
     val nombre: String,
-    val descripcion: String,
     val categoria: String,
     val orden: Int,
     val disponible: Boolean,

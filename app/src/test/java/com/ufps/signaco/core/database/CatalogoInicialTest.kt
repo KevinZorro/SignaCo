@@ -71,10 +71,10 @@ class CatalogoInicialTest {
     }
 
     @Test
-    fun `ninguna sena se queda sin descripcion`() {
-        val sinDescripcion = CatalogoInicial.SENAS.filter { it.descripcion.isBlank() }
+    fun `ninguna sena se queda sin nombre`() {
+        val sinNombre = CatalogoInicial.SENAS.filter { it.nombre.isBlank() }
 
-        assertTrue(sinDescripcion.isEmpty())
+        assertTrue(sinNombre.isEmpty())
     }
 
     @Test

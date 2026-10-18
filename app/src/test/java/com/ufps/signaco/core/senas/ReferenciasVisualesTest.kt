@@ -66,7 +66,6 @@ class ReferenciasVisualesTest {
         id = id,
         letra = id,
         nombre = "Letra $id",
-        descripcion = "",
         categoria = Categoria.VOCALES.name,
         orden = 1,
         disponible = true,
