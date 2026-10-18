@@ -14,7 +14,6 @@ fun SenaEntity.aDominio(referencias: ReferenciasVisuales): Sena = Sena(
     id = id,
     letra = letra,
     nombre = nombre,
-    descripcion = descripcion,
     categoria = runCatching { Categoria.valueOf(categoria) }.getOrDefault(Categoria.CONSONANTES),
     orden = orden,
     disponible = disponible,

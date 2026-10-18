@@ -16,7 +16,6 @@ data class Sena(
     val id: String,
     val letra: String,
     val nombre: String,
-    val descripcion: String,
     val categoria: Categoria,
     val orden: Int,
     val disponible: Boolean,

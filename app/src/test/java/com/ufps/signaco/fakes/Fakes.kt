@@ -127,7 +127,6 @@ fun senaDePrueba(
     id = id,
     letra = id,
     nombre = "Letra $id",
-    descripcion = "Descripción de $id",
     categoria = categoria,
     orden = orden,
     disponible = disponible,

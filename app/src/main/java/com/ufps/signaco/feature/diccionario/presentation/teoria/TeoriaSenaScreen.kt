@@ -147,11 +147,6 @@ private fun TarjetaDeTeoria(sena: Sena) {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.semantics { heading() },
         )
-        Text(
-            text = sena.descripcion,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         // Con imagen ocupa el ancho de la tarjeta en un cuadro; sin imagen queda la letra grande
         // con su aire de siempre.
         val forma = if (sena.tieneReferencia) {
@@ -181,11 +176,7 @@ private fun TeoriaSenaPreview() {
         TeoriaSenaContenido(
             uiState = TeoriaSenaUiState(
                 cargando = false,
-                sena = Sena(
-                    "A", "A", "Letra A",
-                    "Puño cerrado con el pulgar extendido pegado al costado del índice.",
-                    Categoria.VOCALES, 1, true,
-                ),
+                sena = Sena("A", "A", "Letra A", Categoria.VOCALES, 1, true),
                 leccionId = "leccion_vocales",
             ),
             onCerrar = {},

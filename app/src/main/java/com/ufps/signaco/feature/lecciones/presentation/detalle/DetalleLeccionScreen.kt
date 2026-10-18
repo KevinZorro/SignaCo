@@ -150,7 +150,6 @@ fun DetalleLeccionContenido(
                     FilaDeSena(
                         letra = sena.sena.letra,
                         nombre = sena.sena.nombre,
-                        descripcion = sena.sena.descripcion,
                         referencia = sena.sena.referencia,
                         onClick = { onSenaSeleccionada(sena.sena.id) },
                         insignia = if (sena.dominada) {
@@ -173,8 +172,8 @@ fun DetalleLeccionContenido(
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun DetalleLeccionPreview() {
-    fun sena(letra: String, orden: Int, aciertos: Int, descripcion: String) = SenaConProgreso(
-        sena = Sena(letra, letra, "Letra $letra", descripcion, Categoria.VOCALES, orden, true),
+    fun sena(letra: String, orden: Int, aciertos: Int) = SenaConProgreso(
+        sena = Sena(letra, letra, "Letra $letra", Categoria.VOCALES, orden, true),
         progreso = ProgresoSena(letra, intentos = aciertos, aciertos = aciertos),
     )
     SignaCoTheme {
@@ -185,8 +184,8 @@ private fun DetalleLeccionPreview() {
                     // Peor caso: el título de lección más largo.
                     leccion = Leccion("c4", "Consonantes S, T, V, W, X y Y", "", Categoria.CONSONANTES, 5, emptyList()),
                     senas = listOf(
-                        sena("A", 1, 6, "Puño cerrado con el pulgar extendido pegado al costado del índice."),
-                        sena("W", 2, 0, "Índice, medio y anular estirados y separados."),
+                        sena("A", 1, 6),
+                        sena("W", 2, 0),
                     ),
                     completada = false,
                 ),

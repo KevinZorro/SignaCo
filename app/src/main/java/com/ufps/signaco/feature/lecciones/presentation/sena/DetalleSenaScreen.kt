@@ -129,11 +129,6 @@ fun DetalleSenaContenido(
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(top = Espacio.xs),
                 )
-                Text(
-                    text = sena.descripcion,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
                 AreaDeLaSena(sena = sena, subtitulos = uiState.subtitulos)
                 Text(
                     text = stringResource(R.string.detalle_sena_repite),
@@ -203,11 +198,7 @@ private fun DetalleSenaPreview() {
             uiState = DetalleSenaUiState(
                 cargando = false,
                 tituloDeLeccion = "Consonantes B, D, F y G",
-                sena = Sena(
-                    "W", "W", "Letra W",
-                    "Índice, medio y anular estirados y separados.",
-                    Categoria.CONSONANTES, 24, true,
-                ),
+                sena = Sena("W", "W", "Letra W", Categoria.CONSONANTES, 24, true),
                 subtitulos = true,
             ),
             onCerrar = {},

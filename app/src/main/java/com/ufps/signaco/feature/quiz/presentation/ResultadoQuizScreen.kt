@@ -207,7 +207,7 @@ private fun FilaDeRespuesta(calificada: SenaCalificada, onRepasar: () -> Unit) {
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun ResultadoQuizPreview() {
-    fun sena(letra: String) = Sena(letra, letra, "Letra $letra", "", Categoria.CONSONANTES, 1, true)
+    fun sena(letra: String) = Sena(letra, letra, "Letra $letra", Categoria.CONSONANTES, 1, true)
     SignaCoTheme {
         ResultadoQuizContenido(
             uiState = ResultadoQuizUiState(

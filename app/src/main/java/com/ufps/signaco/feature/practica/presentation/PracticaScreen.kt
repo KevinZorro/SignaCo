@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -38,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -63,12 +65,14 @@ import com.ufps.signaco.core.ui.componentes.MensajeVacio
 import com.ufps.signaco.core.ui.componentes.Navegacion
 import com.ufps.signaco.core.ui.componentes.PildoraDeEstado
 import com.ufps.signaco.core.ui.componentes.ProgresoSegmentado
+import com.ufps.signaco.core.ui.componentes.ReferenciaDeSena
 import com.ufps.signaco.core.ui.componentes.Sello
 import com.ufps.signaco.core.ui.componentes.TarjetaDePalabra
 import com.ufps.signaco.core.ui.componentes.TonoDePildora
 import com.ufps.signaco.core.ui.componentes.marcoDeCamara
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.Forma
+import com.ufps.signaco.core.ui.theme.Medida
 import com.ufps.signaco.core.ui.theme.Movimiento
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.core.ui.theme.fuenteGrande
@@ -284,16 +288,32 @@ private fun Practica(
                     .padding(horizontal = Espacio.margen)
                     .fillMaxSize(),
             ) {
-                TarjetaDePalabra(
-                    palabra = sena.nombre,
-                    // Con fuente grande la indicación genérica cede su sitio al visor; la descripción
-                    // de la seña, si la persona la pidió, se queda.
-                    indicacion = when {
-                        uiState.mostrarPistas -> sena.descripcion
-                        fuenteGrande -> null
-                        else -> stringResource(R.string.practica_indicacion)
-                    },
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Espacio.md),
+                ) {
+                    TarjetaDePalabra(
+                        palabra = sena.nombre,
+                        // Con fuente grande la indicación genérica cede su sitio al visor.
+                        indicacion = if (fuenteGrande) null else stringResource(R.string.practica_indicacion),
+                        modifier = Modifier.weight(1f),
+                    )
+                    // La pista es la imagen de referencia de la seña, si la persona la pidió.
+                    if (uiState.mostrarPistas && sena.referencia != null) {
+                        val descripcionDeLaPista = stringResource(R.string.cd_imagen_de_sena, sena.letra)
+                        ReferenciaDeSena(
+                            letra = sena.letra,
+                            referencia = sena.referencia,
+                            estiloDeLetra = MaterialTheme.typography.headlineLarge,
+                            escala = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(Medida.miniatura)
+                                .clip(Forma.pieza)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .semantics { contentDescription = descripcionDeLaPista },
+                        )
+                    }
+                }
                 VisorDeCamara(
                     uiState = uiState,
                     resultado = resultado,
@@ -635,7 +655,7 @@ private const val OPACIDAD_DE_LA_PISTA = 0.25f
 // --- Previews: un estado por pantalla de Figma (04 a 08), con la palabra más larga. ---
 
 private val senasDeEjemplo = listOf("A", "B", "W", "Y").mapIndexed { i, letra ->
-    Sena(letra, letra, "Letra $letra", "Índice, medio y anular estirados y separados.", Categoria.CONSONANTES, i, true)
+    Sena(letra, letra, "Letra $letra", Categoria.CONSONANTES, i, true)
 }
 
 /** Una mano abierta de ejemplo, en coordenadas de imagen. */

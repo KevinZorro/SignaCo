@@ -28,6 +28,5 @@ class BuscarEnDiccionarioUseCase @Inject constructor(
 
     private fun coincide(sena: Sena, texto: String): Boolean =
         sena.letra.lowercase(Locale.ROOT).startsWith(texto) ||
-            sena.nombre.lowercase(Locale.ROOT).contains(texto) ||
-            sena.descripcion.lowercase(Locale.ROOT).contains(texto)
+            sena.nombre.lowercase(Locale.ROOT).contains(texto)
 }

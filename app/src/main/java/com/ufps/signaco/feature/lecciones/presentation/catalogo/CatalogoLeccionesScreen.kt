@@ -203,7 +203,7 @@ private fun cuadrosDe(leccion: LeccionConProgreso): List<EstadoDeCuadro> {
 }
 
 private fun senaDeEjemplo(letra: String, orden: Int, intentos: Int = 0, aciertos: Int = 0) = SenaConProgreso(
-    sena = Sena(letra, letra, "Letra $letra", "Descripción de $letra", Categoria.CONSONANTES, orden, true),
+    sena = Sena(letra, letra, "Letra $letra", Categoria.CONSONANTES, orden, true),
     progreso = ProgresoSena(letra, intentos, aciertos),
 )
 

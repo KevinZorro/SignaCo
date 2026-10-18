@@ -312,7 +312,7 @@ private fun DiaDeLaSemana(inicial: String, descripcion: String, activo: Boolean,
 @Composable
 private fun ProgresoPreview() {
     fun sena(letra: String, intentos: Int, aciertos: Int) = SenaConProgreso(
-        Sena(letra, letra, "Letra $letra", "", Categoria.VOCALES, 1, true),
+        Sena(letra, letra, "Letra $letra", Categoria.VOCALES, 1, true),
         ProgresoSena(letra, intentos, aciertos),
     )
     fun leccion(titulo: String, senas: List<SenaConProgreso>) = LeccionConProgreso(

@@ -62,7 +62,7 @@ La cámara viene en el siguiente paso.</string>
     <string name="practica_siguiente">Siguiente seña</string>
     <string name="practica_terminar">Terminar y hacer el quiz</string>
     <string name="practica_volver_a_la_leccion">Volver a la lección</string>
-    <string name="practica_mostrar_pistas">Mostrar la descripción de la seña</string>
+    <string name="practica_mostrar_pistas">Mostrar la imagen de referencia</string>
     <string name="practica_sin_senas">Esta lección no tiene señas para practicar.</string>
     <string name="practica_estado_buscando_manos">Buscando tu mano</string>
     <string name="practica_cambiar_camara">Cambiar de cámara</string>

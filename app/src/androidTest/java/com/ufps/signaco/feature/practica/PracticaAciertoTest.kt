@@ -65,7 +65,7 @@ class PracticaAciertoTest {
         val estado = PracticaUiState(
             cargando = false,
             senas = listOf("A", "I", "O", "U").mapIndexed { i, letra ->
-                Sena(letra, letra, "Letra $letra", "", Categoria.VOCALES, i, true)
+                Sena(letra, letra, "Letra $letra", Categoria.VOCALES, i, true)
             },
             permiso = EstadoDelPermiso.CONCEDIDO,
             intentoConfirmado = true,

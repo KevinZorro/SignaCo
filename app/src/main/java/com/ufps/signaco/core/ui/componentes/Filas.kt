@@ -126,14 +126,13 @@ fun MiniaturaDeSena(
 }
 
 /**
- * Una seña en una lista (lección o diccionario). [insignia] va junto al nombre, por ejemplo
- * «Dominada».
+ * Una seña en una lista (lección o diccionario): su imagen y su nombre. [insignia] va junto al
+ * nombre, por ejemplo «Dominada».
  */
 @Composable
 fun FilaDeSena(
     letra: String,
     nombre: String,
-    descripcion: String,
     modifier: Modifier = Modifier,
     referencia: ReferenciaVisual? = null,
     onClick: (() -> Unit)? = null,
@@ -141,6 +140,8 @@ fun FilaDeSena(
 ) {
     val clic = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     Row(
+        // Sin descripción debajo, el nombre se centra con la miniatura.
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.md),
         modifier = modifier
             .fillMaxWidth()
@@ -166,11 +167,6 @@ fun FilaDeSena(
                 )
                 insignia?.invoke()
             }
-            Text(
-                text = descripcion,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
@@ -242,7 +238,6 @@ private fun FilasPreview() {
             FilaDeSena(
                 letra = "A",
                 nombre = "Letra A",
-                descripcion = "Puño cerrado con el pulgar extendido pegado al costado del índice.",
                 onClick = {},
                 insignia = { Insignia(texto = "Dominada", icono = R.drawable.ic_check) },
             )
@@ -250,7 +245,6 @@ private fun FilasPreview() {
             FilaDeSena(
                 letra = "Ñ",
                 nombre = "Letra Ñ",
-                descripcion = "Como la N con un trazo ondulado encima.",
                 insignia = {
                     Insignia(texto = "Fuera del MVP", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
