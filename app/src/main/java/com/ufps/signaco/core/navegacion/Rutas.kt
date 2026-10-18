@@ -35,9 +35,17 @@ object Rutas {
     @Serializable
     data class TeoriaSena(val senaId: String)
 
-    /** @param senaInicial la seña con la que arranca; null empieza por la primera. */
+    /**
+     * @param senaInicial la seña con la que arranca; null empieza por la primera.
+     * @param soloEstaSena true si se entró tocando una letra de la lista: se practica solo esa
+     *        y al acertar se vuelve a la lección, sin seguir con las demás.
+     */
     @Serializable
-    data class Practica(val leccionId: String, val senaInicial: String? = null)
+    data class Practica(
+        val leccionId: String,
+        val senaInicial: String? = null,
+        val soloEstaSena: Boolean = false,
+    )
 
     @Serializable
     data class Quiz(val leccionId: String)

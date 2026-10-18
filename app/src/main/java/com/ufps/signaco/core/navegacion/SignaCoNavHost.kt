@@ -62,7 +62,7 @@ fun SignaCoNavHost(
             TeoriaSenaScreen(
                 onCerrar = { navController.navigateUp() },
                 onIniciarIntento = { leccionId, senaId ->
-                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId))
+                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = true))
                 },
             )
         }
@@ -96,8 +96,9 @@ fun SignaCoNavHost(
         composable<Rutas.DetalleSena> {
             DetalleSenaScreen(
                 onCerrar = { navController.navigateUp() },
+                // Se llegó tocando una letra de la lista: se practica solo esa.
                 onProbarConCamara = { leccionId, senaId ->
-                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId))
+                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = true))
                 },
             )
         }
@@ -110,6 +111,7 @@ fun SignaCoNavHost(
                         popUpTo(Rutas.DetalleLeccion(leccionId))
                     }
                 },
+                onVolverALaLeccion = { navController.volverALaLeccion() },
             )
         }
 
@@ -148,4 +150,13 @@ fun SignaCoNavHost(
             )
         }
     }
+}
+
+/**
+ * Regresa a la lista de letras de la lección, cerrando la indicación y la cámara de la letra
+ * suelta. Si se llegó desde el diccionario no hay lección en la pila: se vuelve a la pantalla
+ * anterior, que es la teoría de la seña.
+ */
+private fun NavHostController.volverALaLeccion() {
+    if (!popBackStack<Rutas.DetalleLeccion>(inclusive = false)) navigateUp()
 }

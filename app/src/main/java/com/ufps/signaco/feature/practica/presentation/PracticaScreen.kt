@@ -74,6 +74,7 @@ import com.ufps.signaco.core.ui.theme.SignaCoTheme
 import com.ufps.signaco.core.ui.theme.fuenteGrande
 import com.ufps.signaco.core.ui.theme.signaCoColores
 import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
+import com.ufps.signaco.feature.practica.domain.model.PasoTrasElAcierto
 import com.ufps.signaco.feature.practica.presentation.camara.CapaDeMano
 import com.ufps.signaco.feature.practica.presentation.camara.PantallaDePermiso
 import com.ufps.signaco.feature.practica.presentation.camara.VistaPreviaDeCamara
@@ -84,6 +85,7 @@ import kotlin.math.roundToInt
 fun PracticaScreen(
     onVolver: () -> Unit,
     onTerminar: (String) -> Unit,
+    onVolverALaLeccion: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PracticaViewModel = hiltViewModel(),
 ) {
@@ -111,8 +113,13 @@ fun PracticaScreen(
         onCambiarCamara = viewModel::cambiarDeCamara,
         onReintentarSena = viewModel::reintentarSena,
         onReintentar = viewModel::reintentar,
-        onSiguiente = viewModel::siguienteSena,
-        onTerminar = { onTerminar(viewModel.leccionId) },
+        onContinuar = {
+            when (uiState.pasoTrasElAcierto) {
+                is PasoTrasElAcierto.SiguienteSena -> viewModel.siguienteSena()
+                PasoTrasElAcierto.TerminarLeccion -> onTerminar(viewModel.leccionId)
+                PasoTrasElAcierto.VolverALaLeccion -> onVolverALaLeccion()
+            }
+        },
         onCambiarPistas = viewModel::cambiarMostrarPistas,
         modifier = modifier,
         vistaDeCamara = {
@@ -143,8 +150,8 @@ fun PracticaContenido(
     onCambiarCamara: () -> Unit,
     onReintentarSena: () -> Unit,
     onReintentar: () -> Unit,
-    onSiguiente: () -> Unit,
-    onTerminar: () -> Unit,
+    /** El botón que aparece tras acertar. Qué hace lo dice [PracticaUiState.pasoTrasElAcierto]. */
+    onContinuar: () -> Unit,
     onCambiarPistas: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     vistaDeCamara: @Composable () -> Unit = {},
@@ -193,7 +200,7 @@ fun PracticaContenido(
             onAlternarCaptura = onAlternarCaptura,
             onCambiarCamara = onCambiarCamara,
             onReintentarSena = onReintentarSena,
-            onSiguiente = if (uiState.esLaUltima) onTerminar else onSiguiente,
+            onContinuar = onContinuar,
             onCambiarPistas = onCambiarPistas,
             vistaDeCamara = vistaDeCamara,
             modifier = modifier,
@@ -209,7 +216,7 @@ private fun Practica(
     onAlternarCaptura: () -> Unit,
     onCambiarCamara: () -> Unit,
     onReintentarSena: () -> Unit,
-    onSiguiente: () -> Unit,
+    onContinuar: () -> Unit,
     onCambiarPistas: (Boolean) -> Unit,
     vistaDeCamara: @Composable () -> Unit,
     modifier: Modifier = Modifier,
@@ -223,7 +230,12 @@ private fun Practica(
                     BarraSuperior(
                         navegacion = Navegacion.CERRAR,
                         onNavegar = onVolver,
-                        titulo = stringResource(R.string.practica_sena_de, uiState.indiceActual + 1, uiState.senas.size),
+                        // Una letra suelta no es «Seña 2 de 4»: es solo esa letra.
+                        titulo = if (uiState.soloEstaSena) {
+                            sena.nombre
+                        } else {
+                            stringResource(R.string.practica_sena_de, uiState.indiceActual + 1, uiState.senas.size)
+                        },
                         acciones = {
                             IconToggleButton(checked = uiState.mostrarPistas, onCheckedChange = onCambiarPistas) {
                                 Icon(
@@ -305,7 +317,7 @@ private fun Practica(
         ) {
             HojaDeResultado(Modifier.navigationBarsPadding()) {
                 if (resultado == Resultado.ACIERTO) {
-                    ContenidoDeAcierto(uiState, sena, onSiguiente, onReintentarSena)
+                    ContenidoDeAcierto(uiState, sena, onContinuar, onReintentarSena)
                 } else {
                     ContenidoDeFallo(uiState, onReintentarSena)
                 }
@@ -474,7 +486,7 @@ private fun PanelDeCoincidencia(coincidencia: Float, umbral: Float, modifier: Mo
 private fun ContenidoDeAcierto(
     uiState: PracticaUiState,
     sena: Sena,
-    onSiguiente: () -> Unit,
+    onContinuar: () -> Unit,
     onReintentarSena: () -> Unit,
 ) {
     val acertada = uiState.retroalimentacion as? EstadoDeRetroalimentacion.Acertada
@@ -502,8 +514,8 @@ private fun ContenidoDeAcierto(
     }
     Column {
         BotonPrincipal(
-            texto = stringResource(if (uiState.esLaUltima) R.string.practica_terminar else R.string.practica_siguiente),
-            onClick = onSiguiente,
+            texto = stringResource(textoDelPaso(uiState.pasoTrasElAcierto)),
+            onClick = onContinuar,
             modifier = Modifier.fillMaxWidth(),
         )
         // RF13: repetir la misma seña sin salir de la lección.
@@ -587,6 +599,13 @@ private fun Context.abrirAjustesDeLaApp() {
     }
 }
 
+/** El texto del botón tras acertar, según a dónde lleve. */
+private fun textoDelPaso(paso: PasoTrasElAcierto): Int = when (paso) {
+    is PasoTrasElAcierto.SiguienteSena -> R.string.practica_siguiente
+    PasoTrasElAcierto.TerminarLeccion -> R.string.practica_terminar
+    PasoTrasElAcierto.VolverALaLeccion -> R.string.practica_volver_a_la_leccion
+}
+
 private fun textoDelError(error: ErrorDeReconocimiento): Int = when (error) {
     ErrorDeReconocimiento.CAMARA -> R.string.practica_error_camara
     ErrorDeReconocimiento.MODELO -> R.string.practica_error_modelo
@@ -660,8 +679,7 @@ private fun VistaPreviaDePractica(uiState: PracticaUiState) {
             onCambiarCamara = {},
             onReintentarSena = {},
             onReintentar = {},
-            onSiguiente = {},
-            onTerminar = {},
+            onContinuar = {},
             onCambiarPistas = {},
         )
     }

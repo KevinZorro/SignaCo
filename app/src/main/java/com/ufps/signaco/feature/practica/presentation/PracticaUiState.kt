@@ -2,6 +2,7 @@ package com.ufps.signaco.feature.practica.presentation
 
 import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
+import com.ufps.signaco.feature.practica.domain.model.PasoTrasElAcierto
 
 /**
  * Lo que la pantalla de práctica le muestra al usuario tras el último intento.
@@ -65,6 +66,11 @@ data class PracticaUiState(
     val puntosDeMano: FloatArray = FloatArray(0),
     val proporcionDeImagen: Float = 0f,
     val reducirAnimaciones: Boolean = false,
+
+    /** True si se practica una letra suelta elegida de la lista de la lección. */
+    val soloEstaSena: Boolean = false,
+    /** A dónde lleva el botón que aparece tras acertar. Lo decide el dominio. */
+    val pasoTrasElAcierto: PasoTrasElAcierto = PasoTrasElAcierto.TerminarLeccion,
 ) {
     val senaActual: Sena? get() = senas.getOrNull(indiceActual)
 

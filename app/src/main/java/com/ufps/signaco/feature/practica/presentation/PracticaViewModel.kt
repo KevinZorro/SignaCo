@@ -15,6 +15,7 @@ import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
 import com.ufps.signaco.feature.practica.domain.model.ResultadoDeFrame
 import com.ufps.signaco.feature.practica.domain.model.ResultadoIntento
 import com.ufps.signaco.feature.practica.domain.usecase.CrearEstabilizadorUseCase
+import com.ufps.signaco.feature.practica.domain.usecase.DecidirPasoTrasElAciertoUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerSenasParaPracticarUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ObtenerUmbralDeSenaUseCase
 import com.ufps.signaco.feature.practica.domain.usecase.ProcesarFrameUseCase
@@ -51,6 +52,7 @@ class PracticaViewModel @Inject constructor(
     private val procesarFrame: ProcesarFrameUseCase,
     private val crearEstabilizador: CrearEstabilizadorUseCase,
     private val obtenerUmbral: ObtenerUmbralDeSenaUseCase,
+    private val decidirPasoTrasElAcierto: DecidirPasoTrasElAciertoUseCase,
 ) : ViewModel() {
 
     private val ruta = savedStateHandle.toRoute<Rutas.Practica>()
@@ -313,29 +315,38 @@ class PracticaViewModel @Inject constructor(
         carga: CargaDeSenas,
         preferencias: PreferenciasUsuario,
         sesion: EstadoDeSesion,
-    ) = PracticaUiState(
-        cargando = carga.cargando,
-        hayError = carga.hayError,
-        senas = carga.senas,
-        indiceActual = indiceResuelto(sesion.indice, carga.senas),
-        retroalimentacion = sesion.retroalimentacion,
-        aciertosDeLaSesion = sesion.aciertos,
-        mostrarPistas = preferencias.mostrarPistas,
-        retroalimentacionHaptica = preferencias.retroalimentacionHaptica,
-        permiso = sesion.permiso,
-        capturando = sesion.capturando,
-        camaraFrontal = sesion.camaraFrontal,
-        estadoDeReconocimiento = sesion.estadoDeReconocimiento,
-        avanceDeEstabilidad = sesion.avance,
-        framesParaConfirmar = sesion.framesParaConfirmar,
-        errorDelReconocimiento = sesion.error,
-        intentoConfirmado = sesion.intentoConfirmado,
-        coincidencia = sesion.coincidencia,
-        umbral = sesion.umbral,
-        puntosDeMano = sesion.puntosDeMano,
-        proporcionDeImagen = sesion.proporcionDeImagen,
-        reducirAnimaciones = preferencias.reducirAnimaciones,
-    )
+    ): PracticaUiState {
+        val indiceActual = indiceResuelto(sesion.indice, carga.senas)
+        return PracticaUiState(
+            cargando = carga.cargando,
+            hayError = carga.hayError,
+            senas = carga.senas,
+            indiceActual = indiceActual,
+            retroalimentacion = sesion.retroalimentacion,
+            aciertosDeLaSesion = sesion.aciertos,
+            mostrarPistas = preferencias.mostrarPistas,
+            retroalimentacionHaptica = preferencias.retroalimentacionHaptica,
+            permiso = sesion.permiso,
+            capturando = sesion.capturando,
+            camaraFrontal = sesion.camaraFrontal,
+            estadoDeReconocimiento = sesion.estadoDeReconocimiento,
+            avanceDeEstabilidad = sesion.avance,
+            framesParaConfirmar = sesion.framesParaConfirmar,
+            errorDelReconocimiento = sesion.error,
+            intentoConfirmado = sesion.intentoConfirmado,
+            coincidencia = sesion.coincidencia,
+            umbral = sesion.umbral,
+            puntosDeMano = sesion.puntosDeMano,
+            proporcionDeImagen = sesion.proporcionDeImagen,
+            reducirAnimaciones = preferencias.reducirAnimaciones,
+            soloEstaSena = ruta.soloEstaSena,
+            pasoTrasElAcierto = decidirPasoTrasElAcierto(
+                senas = carga.senas,
+                senaActualId = carga.senas.getOrNull(indiceActual)?.id.orEmpty(),
+                soloEstaSena = ruta.soloEstaSena,
+            ),
+        )
+    }
 
     /** Mientras no se haya avanzado, la sesión arranca en la seña que pidió la ruta. */
     private fun indiceResuelto(indice: Int, senas: List<Sena>): Int {
