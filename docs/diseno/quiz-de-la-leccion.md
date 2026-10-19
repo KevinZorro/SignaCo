@@ -101,6 +101,7 @@ Estas pantallas no están en Figma y siguen el estilo de las existentes:
 
 ## Desviación del ERS
 
-El RF02 dice «una imagen o clip de referencia y una descripción textual». Las descripciones se
+El RF02 decía «una imagen o clip de referencia y una descripción textual». Las descripciones se
 quitaron por decisión del equipo (Kevin y Anyela) porque nunca se validaron con una fuente de
-LSC. Queda pendiente actualizar el RF02 en el ERS para que diga solo «imagen de referencia».
+LSC. El RF02 ya está actualizado en el ERS v2.1 (sección 8), y el estado de todos los RF está en
+`docs/trazabilidad_rf.md`.

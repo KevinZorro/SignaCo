@@ -1,6 +1,6 @@
 # **SignaCO — Especificación de Requerimientos de Software**
 
-**Versión:** 2.0 — reestructurada tras el pivote de producto (de "asistente de comunicación" a "app de aprendizaje de LSC") **Referencia normativa:** estructura orientada por ISO/IEC/IEEE 29148 **Método de priorización:** MoSCoW (Must / Should / Could / Won't) **Métodos de verificación:** Demostración (D), Prueba (P), Inspección (I), Análisis (A) **Documento de alcance relacionado:** `SignaCO_anteproyecto_v2_app_aprendizaje.md`
+**Versión:** 2.1 — ajuste del RF02 y registro de desviaciones (sección 8). La 2.0 se reestructuró tras el pivote de producto (de "asistente de comunicación" a "app de aprendizaje de LSC") **Referencia normativa:** estructura orientada por ISO/IEC/IEEE 29148 **Método de priorización:** MoSCoW (Must / Should / Could / Won't) **Métodos de verificación:** Demostración (D), Prueba (P), Inspección (I), Análisis (A) **Documento de alcance relacionado:** `SignaCO_anteproyecto_v2_app_aprendizaje.md`
 
 ## **0\. Qué cambió respecto a la versión 1.0**
 
@@ -30,7 +30,7 @@ Este documento define los requerimientos funcionales (RF), no funcionales (RNF) 
 | ID | Requerimiento | Prioridad | Verificación |
 | ----- | ----- | ----- | ----- |
 | RF01 | El sistema deberá organizar el vocabulario base en lecciones agrupadas por categoría (saludos, cortesía, necesidades elementales, ubicación, emergencia), cada una con 3 a 5 señas | Must | D |
-| RF02 | El sistema deberá mostrar, para cada seña de una lección, una imagen o clip de referencia y una descripción textual antes de solicitar la práctica | Must | D |
+| RF02 | El sistema deberá mostrar, para cada seña de una lección, una imagen o clip de referencia antes de solicitar la práctica *(modificado en v2.1: se retira la descripción textual; ver sección 8)* | Must | D |
 | RF03 | El sistema deberá permitir navegar el catálogo completo de señas fuera del flujo de lecciones, a modo de diccionario de consulta | Should | D |
 
 ### **3.2 Módulo de captura y reconocimiento**
@@ -161,6 +161,8 @@ Este documento define los requerimientos funcionales (RF), no funcionales (RNF) 
 | OE-2 Desarrollar la aplicación Android | RF04 a RF27, RNF01-03, RNF06-16, RD01-04 |
 | OE-3 Evaluar el sistema | RNF04, RNF05, RNF19, más el plan de pruebas funcionales de RF04 a RF27 |
 
+El estado de cada RF frente al código (dónde está implementado, qué prueba lo cubre y qué falta) se lleva en `docs/trazabilidad_rf.md`.
+
 ## **7\. Criterios de aceptación globales del MVP**
 
 * Un usuario abre una lección, ejecuta las señas solicitadas frente a la cámara y recibe retroalimentación (acertada / no acertada) en menos de 2 segundos, sin conexión a internet.  
@@ -169,3 +171,25 @@ Este documento define los requerimientos funcionales (RF), no funcionales (RNF) 
 * La aplicación completa el flujo lección → práctica → quiz sin cierres inesperados durante una sesión continua de 15 minutos.  
 * La revisión del manifiesto y del código confirma la ausencia de transmisión de datos a servidores externos.
 
+## **8\. Registro de cambios y desviaciones**
+
+### **8.1 Cambios de requerimientos**
+
+| Versión | RF | Cambio | Motivo | Aprobado por |
+| ----- | ----- | ----- | ----- | ----- |
+| 2.1 | RF02 | Se retira «y una descripción textual». La seña se enseña con su imagen de referencia. | Las descripciones nunca se validaron con una fuente de LSC y podían enseñar mal la seña. | Kevin y Anyela |
+
+### **8.2 Desviaciones conocidas de la implementación**
+
+Estas diferencias entre el texto de un RF y la implementación están documentadas en `docs/trazabilidad_rf.md` y pendientes de decisión del equipo:
+
+| RF | Texto del ERS | Implementación |
+| ----- | ----- | ----- |
+| RF01 | Categorías de palabras (saludos, cortesía, necesidades, ubicación, emergencia) | El MVP enseña el abecedario: 5 lecciones de 3 a 4 letras en las categorías Vocales y Consonantes |
+| RF08 | Umbral configurable, 0.75 por defecto | Umbral por letra en `config_rechazo.json`, ajustable sin recompilar |
+| RF14 | Dominada tras N aciertos consecutivos, configurable | Dominada con 5 aciertos y una tasa de acierto de al menos 60 %; las constantes están en el código |
+| RF26 | Ajustar umbral y tamaño de fuente | Solo el tamaño de texto y el contraste; los umbrales viven en `config_rechazo.json` |
+
+### **8.3 Decisiones de diseño del quiz (RF15, RF16, RF17)**
+
+El quiz de cada lección tiene dos partes: reconocimiento con imagen (cubre en parte el RF17, «emparejar imagen-palabra») y ejecución con cámara (RF15). La lección se aprueba con el 70 % de la parte con cámara, cuyos intentos se registran en el progreso (RF18). El detalle está en `docs/diseno/quiz-de-la-leccion.md`.
