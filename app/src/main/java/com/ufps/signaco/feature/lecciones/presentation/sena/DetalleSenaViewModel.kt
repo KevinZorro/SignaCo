@@ -33,6 +33,7 @@ class DetalleSenaViewModel @Inject constructor(
     private val ruta = savedStateHandle.toRoute<Rutas.DetalleSena>()
     val leccionId: String = ruta.leccionId
     val senaId: String = ruta.senaId
+    val enRecorrido: Boolean = ruta.enRecorrido
 
     private val reintentos = MutableStateFlow(0)
 

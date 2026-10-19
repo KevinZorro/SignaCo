@@ -43,6 +43,7 @@
 La cámara viene en el siguiente paso.</string>
     <string name="detalle_sena_probar">Pruébalo con la cámara</string>
     <string name="cd_letra_grande">Letra %1$s</string>
+    <string name="cd_imagen_de_sena">Imagen de referencia de la seña %1$s</string>
 
     <!-- Primer uso -->
     <string name="primer_uso_titulo">Primero conoce tu mano</string>
@@ -60,7 +61,8 @@ La cámara viene en el siguiente paso.</string>
     <string name="practica_estado_otra_letra">Detectamos la letra %1$s, no la %2$s</string>
     <string name="practica_siguiente">Siguiente seña</string>
     <string name="practica_terminar">Terminar y hacer el quiz</string>
-    <string name="practica_mostrar_pistas">Mostrar la descripción de la seña</string>
+    <string name="practica_volver_a_la_leccion">Volver a la lección</string>
+    <string name="practica_mostrar_pistas">Mostrar la imagen de referencia</string>
     <string name="practica_sin_senas">Esta lección no tiene señas para practicar.</string>
     <string name="practica_estado_buscando_manos">Buscando tu mano</string>
     <string name="practica_cambiar_camara">Cambiar de cámara</string>
@@ -75,6 +77,11 @@ La cámara viene en el siguiente paso.</string>
     <string name="practica_umbral">Se confirma desde el %1$d %%</string>
     <string name="practica_iniciar_intento">Iniciar intento</string>
     <string name="practica_detener">Detener</string>
+    <string name="practica_cancelar_cuenta">No estoy listo</string>
+    <string name="cuenta_regresiva_preparate">Prepárate</string>
+    <string name="cuenta_regresiva_inicio">¡Ya!</string>
+    <string name="cuenta_regresiva_anuncio">El intento empieza en %1$d</string>
+    <string name="cuenta_regresiva_inicio_anuncio">Intento iniciado. Haz la seña frente a la cámara.</string>
     <string name="practica_acertaste">¡Acertaste!</string>
     <string name="practica_acierto_detalle">%1$s, con %2$d %% de coincidencia.</string>
     <string name="practica_no_reconocimos">No reconocimos la seña</string>
@@ -108,23 +115,36 @@ La cámara viene en el siguiente paso.</string>
 
     <!-- Quiz -->
     <string name="quiz_titulo">Quiz</string>
+    <string name="quiz_titulo_imagen">Quiz · Parte 1 de 2</string>
     <string name="quiz_pregunta_numero">Pregunta %1$d de %2$d</string>
     <string name="quiz_enunciado">¿A qué letra corresponde esta seña?</string>
+    <string name="cd_imagen_del_quiz">Imagen de la seña que debes reconocer</string>
     <string name="quiz_siguiente">Siguiente</string>
     <string name="quiz_terminar">Terminar</string>
     <string name="quiz_sin_preguntas">No pudimos armar el quiz de esta lección.</string>
+    <string name="quiz_camara_titulo">Quiz · Pregunta %1$d de %2$d</string>
+    <string name="quiz_camara_letra">Letra %1$s</string>
+    <string name="quiz_camara_indicacion">Haz esta seña frente a la cámara · Intento %1$d de %2$d</string>
+    <string name="quiz_camara_saltar">Saltar pregunta</string>
+    <string name="quiz_camara_intentar_ya">Intentar ya</string>
+    <string name="quiz_camara_fallada">Esta pregunta cuenta como error. La %1$s queda para repasar.</string>
+    <string name="quiz_camara_siguiente">Siguiente pregunta</string>
+    <string name="quiz_camara_ver_resultado">Ver el resultado</string>
+    <string name="quiz_camara_sin_preguntas">Esta lección no tiene letras para el quiz con cámara.</string>
 
     <!-- Resultado del quiz -->
     <string name="resultado_titulo">Resultado</string>
     <string name="resultado_detalle_aprobado">Ya puedes seguir con la siguiente lección.</string>
-    <string name="resultado_detalle_reprobado">Practica un poco más y vuelve a intentarlo.</string>
+    <string name="resultado_detalle_reprobado">Para aprobar la lección necesitas el 70 \u0025 con la cámara. Practica un poco más y vuelve a intentarlo.</string>
     <string name="resultado_repetir">Repetir el quiz</string>
     <string name="resultado_titulo_quiz">Quiz de %1$s</string>
-    <string name="resultado_de_total">de %1$d aciertos</string>
+    <string name="resultado_de_total">de %1$d con la cámara</string>
     <string name="resultado_acertada">Acertada</string>
+    <string name="resultado_parte_imagen">Reconocimiento con imagen: %1$d de %2$d</string>
+    <string name="resultado_aciertos_de">%1$d de %2$d con la cámara</string>
     <string name="resultado_repasar">Repasar</string>
     <string name="resultado_ver_progreso">Ver mi progreso</string>
-    <string name="cd_resultado_puntaje">%1$d de %2$d aciertos</string>
+    <string name="cd_resultado_puntaje">%1$d de %2$d aciertos con la cámara</string>
     <string name="cd_respuesta_acertada">Acertada</string>
     <string name="cd_respuesta_fallada">Fallada</string>
 
@@ -219,6 +239,10 @@ La cámara viene en el siguiente paso.</string>
         <item>Domingo</item>
     </string-array>
 
+    <plurals name="quiz_camara_quedan">
+        <item quantity="one">Te queda %d intento. La cuenta vuelve a empezar sola.</item>
+        <item quantity="other">Te quedan %d intentos. La cuenta vuelve a empezar sola.</item>
+    </plurals>
     <plurals name="progreso_dias_seguidos">
         <item quantity="one">%1$d día seguido</item>
         <item quantity="other">%1$d días seguidos</item>

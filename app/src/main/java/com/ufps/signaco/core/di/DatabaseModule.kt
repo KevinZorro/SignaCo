@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.ufps.signaco.core.database.PrecargaDelCatalogo
 import com.ufps.signaco.core.database.MIGRACION_1_2
+import com.ufps.signaco.core.database.MIGRACION_2_3
 import com.ufps.signaco.core.database.SignaCoDatabase
 import com.ufps.signaco.core.database.dao.LeccionDao
 import com.ufps.signaco.core.database.dao.ProgresoDao
@@ -29,7 +30,7 @@ object DatabaseModule {
         contexto,
         SignaCoDatabase::class.java,
         SignaCoDatabase.NOMBRE,
-    ).addCallback(precarga).addMigrations(MIGRACION_1_2).build()
+    ).addCallback(precarga).addMigrations(MIGRACION_1_2, MIGRACION_2_3).build()
 
     @Provides
     fun proveerSenaDao(base: SignaCoDatabase): SenaDao = base.senaDao()

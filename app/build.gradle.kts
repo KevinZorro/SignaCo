@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.firebase.appdistribution)
     alias(libs.plugins.google.gms.google.services)
+    // Cobertura de las pruebas unitarias (RNF-19). Viene con Gradle: no es una biblioteca.
+    jacoco
 }
 
 android {
@@ -125,4 +127,51 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+// --- Cobertura de domain (RNF-19: objetivo 40 %) ---
+//
+// Se mide a mano y no en cada build:
+//   ./gradlew coberturaDomain -Pcobertura
+// El reporte queda en app/build/reports/jacoco/coberturaDomain/html/index.html.
+//
+// Sin -Pcobertura el agente de JaCoCo no se engancha a las pruebas, así que el CI y el
+// build de siempre quedan exactamente igual. No toca el APK, el modelo ni los assets.
+val medirCobertura = providers.gradleProperty("cobertura").isPresent
+
+jacoco {
+    toolVersion = "0.8.14"
+}
+
+tasks.withType<Test>().configureEach {
+    extensions.configure<JacocoTaskExtension> {
+        isEnabled = medirCobertura
+    }
+}
+
+tasks.register<JacocoReport>("coberturaDomain") {
+    group = "verification"
+    description = "Cobertura de las pruebas unitarias sobre los paquetes domain."
+    dependsOn("testDebugUnitTest")
+
+    val build = layout.buildDirectory
+    // Solo las clases de domain. Se descartan las fábricas que generan Hilt y Dagger: no son
+    // código del equipo y bajarían el porcentaje sin decir nada.
+    classDirectories.setFrom(
+        fileTree(build) {
+            include(
+                "intermediates/built_in_kotlinc/debug/**/domain/**/*.class",
+                "tmp/kotlin-classes/debug/**/domain/**/*.class",
+            )
+            exclude("**/*_Factory*", "**/*_MembersInjector*", "**/Hilt_*", "**/*_HiltModules*")
+        },
+    )
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(fileTree(build) { include("jacoco/testDebugUnitTest.exec") })
+
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        csv.required.set(true)
+    }
 }

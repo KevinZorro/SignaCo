@@ -7,6 +7,9 @@ data class ResultadoQuizUiState(
     val aciertos: Int = 0,
     val total: Int = 0,
     val aprobado: Boolean = false,
+    /** Parte 1, con imagen. Se muestra pero no aprueba. Total 0 si no la hubo. */
+    val aciertosImagen: Int = 0,
+    val totalImagen: Int = 0,
     val tituloDeLeccion: String = "",
     /** Vacío si el desglose no se pudo cargar: el puntaje se muestra igual. */
     val senas: List<SenaCalificada> = emptyList(),

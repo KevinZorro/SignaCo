@@ -27,6 +27,10 @@ data class LeccionConProgreso(
 
     val senasDominadas: Int get() = senas.count { it.dominada }
 
+    /** Con la que arranca «Empezar práctica». Null si la lección no tiene señas practicables. */
+    val primeraSenaParaPracticar: String?
+        get() = senas.firstOrNull { it.sena.disponible }?.sena?.id
+
     /** Entre 0f y 1f. */
     val porcentaje: Float
         get() = if (totalDeSenas == 0) 0f else senasDominadas.toFloat() / totalDeSenas

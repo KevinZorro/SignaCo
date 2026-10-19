@@ -114,7 +114,7 @@ fun DiccionarioContenido(
                         FilaDeSena(
                             letra = sena.letra,
                             nombre = sena.nombre,
-                            descripcion = sena.descripcion,
+                            referencia = sena.referencia,
                             onClick = { onSenaSeleccionada(sena.id) },
                             insignia = if (sena.disponible) {
                                 null
@@ -225,8 +225,8 @@ private fun DiccionarioPreview() {
                 cargando = false,
                 categoria = Categoria.VOCALES,
                 senas = listOf(
-                    Sena("A", "A", "Letra A", "Puño cerrado con el pulgar extendido pegado al costado del índice.", Categoria.VOCALES, 1, true),
-                    Sena("NN", "Ñ", "Letra Ñ", "Como la N con un trazo ondulado encima. Fuera del vocabulario del MVP.", Categoria.CONSONANTES, 15, false),
+                    Sena("A", "A", "Letra A", Categoria.VOCALES, 1, true),
+                    Sena("NN", "Ñ", "Letra Ñ", Categoria.CONSONANTES, 15, false),
                 ),
             ),
             onCambiarConsulta = {},

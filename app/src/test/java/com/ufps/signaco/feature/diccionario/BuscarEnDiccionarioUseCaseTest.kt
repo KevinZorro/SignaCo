@@ -15,7 +15,7 @@ class BuscarEnDiccionarioUseCaseTest {
 
     private val senas = listOf(
         senaDePrueba("A", orden = 1),
-        senaDePrueba("B", orden = 2).copy(descripcion = "Mano abierta con dedos juntos"),
+        senaDePrueba("B", orden = 2),
         senaDePrueba("NN", orden = 3, disponible = false),
     )
 
@@ -43,8 +43,8 @@ class BuscarEnDiccionarioUseCaseTest {
     }
 
     @Test
-    fun `filtra por texto de la descripcion`() = runTest {
-        val resultado = caso("dedos juntos").first()
+    fun `filtra por el nombre de la sena`() = runTest {
+        val resultado = caso("letra b").first()
 
         assertEquals(listOf("B"), resultado.map { it.id })
     }

@@ -26,7 +26,7 @@ El reconocimiento ocurre en el teléfono, sin red: la app solo lee 21 puntos de 
 
 ## Capabilities and Constraints
 
-- Lecciones por categoría (Vocales, Consonantes), práctica con cámara, quiz de opción múltiple, progreso y racha locales (Room + DataStore), diccionario de las 27 letras.
+- Lecciones por categoría (Vocales, Consonantes) con imagen de referencia de cada letra, práctica con cámara (lección completa o letra suelta, con cuenta regresiva), quiz en dos partes (reconocer la imagen y hacer la seña frente a la cámara, RF15), progreso y racha locales (Room + DataStore), diccionario de las 27 letras. Trazabilidad de RF en `docs/trazabilidad_rf.md`.
 - Vocabulario activo: 19 letras; el resto (incluida la Ñ) se muestra en el diccionario pero no se practica.
 - Solo poses estáticas. H y R tienen más falso rechazo; no es un bug de la app.
 - Fuera de alcance: traducción, cuentas, login, nube, funciones sociales, avatar 3D, señas dinámicas.

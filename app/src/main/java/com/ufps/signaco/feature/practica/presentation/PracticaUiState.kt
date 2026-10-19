@@ -2,6 +2,8 @@ package com.ufps.signaco.feature.practica.presentation
 
 import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.feature.practica.domain.model.EstadoDeReconocimiento
+import com.ufps.signaco.feature.practica.domain.model.PasoTrasElAcierto
+import com.ufps.signaco.feature.practica.presentation.camara.EstadoDelVisor
 
 /**
  * Lo que la pantalla de práctica le muestra al usuario tras el último intento.
@@ -65,10 +67,36 @@ data class PracticaUiState(
     val puntosDeMano: FloatArray = FloatArray(0),
     val proporcionDeImagen: Float = 0f,
     val reducirAnimaciones: Boolean = false,
+    /**
+     * Segundos que faltan para que el intento empiece solo (3, 2, 1), 0 justo al empezar y null
+     * si no hay cuenta en pantalla.
+     */
+    val cuentaRegresiva: Int? = null,
+
+    /** True si se practica una letra suelta elegida de la lista de la lección. */
+    val soloEstaSena: Boolean = false,
+    /** A dónde lleva el botón que aparece tras acertar. Lo decide el dominio. */
+    val pasoTrasElAcierto: PasoTrasElAcierto = PasoTrasElAcierto.TerminarLeccion,
 ) {
     val senaActual: Sena? get() = senas.getOrNull(indiceActual)
 
     val esLaUltima: Boolean get() = senas.isNotEmpty() && indiceActual >= senas.lastIndex
+
+    /** Lo que dibuja el visor de la cámara. */
+    val estadoDelVisor: EstadoDelVisor
+        get() = EstadoDelVisor(
+            puntosDeMano = puntosDeMano,
+            proporcionDeImagen = proporcionDeImagen,
+            capturando = capturando,
+            estadoDeReconocimiento = estadoDeReconocimiento,
+            noReconocida = retroalimentacion == EstadoDeRetroalimentacion.NoReconocida,
+            coincidencia = coincidencia,
+            umbral = umbral,
+            cuentaRegresiva = cuentaRegresiva,
+        )
+
+    /** La cuenta regresiva está en 3, 2 o 1: el intento todavía no empezó. */
+    val contando: Boolean get() = (cuentaRegresiva ?: 0) > 0
 
     val sinSenas: Boolean get() = !cargando && !hayError && senas.isEmpty()
 

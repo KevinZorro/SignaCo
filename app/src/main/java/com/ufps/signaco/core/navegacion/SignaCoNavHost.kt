@@ -16,6 +16,7 @@ import com.ufps.signaco.feature.lecciones.presentation.primeruso.ConoceTuManoScr
 import com.ufps.signaco.feature.lecciones.presentation.sena.DetalleSenaScreen
 import com.ufps.signaco.feature.practica.presentation.PracticaScreen
 import com.ufps.signaco.feature.progreso.presentation.ProgresoScreen
+import com.ufps.signaco.feature.quiz.presentation.QuizCamaraScreen
 import com.ufps.signaco.feature.quiz.presentation.QuizScreen
 import com.ufps.signaco.feature.quiz.presentation.ResultadoQuizScreen
 
@@ -62,7 +63,7 @@ fun SignaCoNavHost(
             TeoriaSenaScreen(
                 onCerrar = { navController.navigateUp() },
                 onIniciarIntento = { leccionId, senaId ->
-                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId))
+                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = true))
                 },
             )
         }
@@ -88,7 +89,10 @@ fun SignaCoNavHost(
                 onSenaSeleccionada = { leccionId, senaId ->
                     navController.navigate(Rutas.DetalleSena(leccionId, senaId))
                 },
-                onPracticar = { leccionId -> navController.navigate(Rutas.Practica(leccionId)) },
+                // «Empezar práctica» recorre la lección: primero la indicación de la primera letra.
+                onPracticar = { leccionId, primeraSenaId ->
+                    navController.navigate(Rutas.DetalleSena(leccionId, primeraSenaId, enRecorrido = true))
+                },
                 onHacerQuiz = { leccionId -> navController.navigate(Rutas.Quiz(leccionId)) },
             )
         }
@@ -96,8 +100,12 @@ fun SignaCoNavHost(
         composable<Rutas.DetalleSena> {
             DetalleSenaScreen(
                 onCerrar = { navController.navigateUp() },
-                onProbarConCamara = { leccionId, senaId ->
-                    navController.navigate(Rutas.Practica(leccionId, senaInicial = senaId))
+                // Tocando una letra de la lista se practica solo esa; con «Empezar práctica» la
+                // cámara sigue luego con las demás letras de la lección.
+                onProbarConCamara = { leccionId, senaId, enRecorrido ->
+                    navController.navigate(
+                        Rutas.Practica(leccionId, senaInicial = senaId, soloEstaSena = !enRecorrido),
+                    )
                 },
             )
         }
@@ -110,11 +118,35 @@ fun SignaCoNavHost(
                         popUpTo(Rutas.DetalleLeccion(leccionId))
                     }
                 },
+                onVolverALaLeccion = { navController.volverALaLeccion() },
+                // La indicación de la siguiente letra reemplaza a la indicación y la cámara de la
+                // anterior: así «atrás» siempre lleva a la lección y la pila no crece letra a letra.
+                onSiguienteSena = { leccionId, senaId ->
+                    navController.navigate(Rutas.DetalleSena(leccionId, senaId, enRecorrido = true)) {
+                        popUpTo(Rutas.DetalleLeccion(leccionId))
+                    }
+                },
             )
         }
 
+        // Parte 1: reconocimiento con imagen. Al terminar sigue la parte 2, con cámara.
         composable<Rutas.Quiz> {
             QuizScreen(
+                onVolver = { navController.navigateUp() },
+                onQuizTerminado = { leccionId, resultado ->
+                    navController.navigate(
+                        Rutas.QuizCamara(leccionId, aciertosImagen = resultado.aciertos, totalImagen = resultado.total),
+                    ) {
+                        popUpTo<Rutas.Quiz> { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        // Parte 2 (RF15): hacer las letras frente a la cámara. Su resultado aprueba la lección.
+        composable<Rutas.QuizCamara> { entrada ->
+            val ruta = entrada.toRoute<Rutas.QuizCamara>()
+            QuizCamaraScreen(
                 onVolver = { navController.navigateUp() },
                 onQuizTerminado = { leccionId, resultado ->
                     navController.navigate(
@@ -123,10 +155,12 @@ fun SignaCoNavHost(
                             aciertos = resultado.aciertos,
                             total = resultado.total,
                             senasDelQuiz = resultado.respuestas.map { it.senaId },
-                            senasFalladas = resultado.respuestas.filterNot { it.acerto }.map { it.senaId },
+                            aciertosPorPregunta = resultado.respuestas.map { it.acerto },
+                            aciertosImagen = ruta.aciertosImagen,
+                            totalImagen = ruta.totalImagen,
                         ),
                     ) {
-                        popUpTo<Rutas.Quiz> { inclusive = true }
+                        popUpTo<Rutas.QuizCamara> { inclusive = true }
                     }
                 },
             )
@@ -148,4 +182,13 @@ fun SignaCoNavHost(
             )
         }
     }
+}
+
+/**
+ * Regresa a la lista de letras de la lección, cerrando la indicación y la cámara de la letra
+ * suelta. Si se llegó desde el diccionario no hay lección en la pila: se vuelve a la pantalla
+ * anterior, que es la teoría de la seña.
+ */
+private fun NavHostController.volverALaLeccion() {
+    if (!popBackStack<Rutas.DetalleLeccion>(inclusive = false)) navigateUp()
 }

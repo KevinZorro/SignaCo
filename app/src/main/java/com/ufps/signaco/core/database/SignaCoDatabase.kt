@@ -30,7 +30,7 @@ import com.ufps.signaco.core.database.entity.SenaEntity
         RachaEntity::class,
         ActividadDiariaEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class SignaCoDatabase : RoomDatabase() {

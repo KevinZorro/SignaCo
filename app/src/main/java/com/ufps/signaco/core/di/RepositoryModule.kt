@@ -2,7 +2,9 @@ package com.ufps.signaco.core.di
 
 import com.ufps.signaco.core.preferencias.data.PreferenciasRepositoryDataStore
 import com.ufps.signaco.core.preferencias.domain.PreferenciasRepository
+import com.ufps.signaco.core.senas.data.ReferenciasEnRecursos
 import com.ufps.signaco.core.senas.data.SenaRepositoryRoom
+import com.ufps.signaco.core.senas.domain.ReferenciasVisuales
 import com.ufps.signaco.core.senas.domain.SenaRepository
 import com.ufps.signaco.feature.lecciones.data.LeccionRepositoryRoom
 import com.ufps.signaco.feature.lecciones.domain.LeccionRepository
@@ -27,6 +29,13 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun enlazarSenaRepository(implementacion: SenaRepositoryRoom): SenaRepository
+
+    /** Hoy, imágenes en res/drawable-nodpi. Para usar fotos o video basta cambiar esta línea. */
+    @Binds
+    @Singleton
+    abstract fun enlazarReferenciasVisuales(
+        implementacion: ReferenciasEnRecursos,
+    ): ReferenciasVisuales
 
     @Binds
     @Singleton

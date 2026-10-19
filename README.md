@@ -22,12 +22,12 @@ com.ufps.signaco
 │   ├── navegacion/              rutas type-safe, NavHost y armazón con barra inferior
 │   ├── preferencias/            DataStore (domain + data)
 │   ├── reconocimiento/          SignClassifier y sus dos implementaciones
-│   ├── senas/                   catálogo de señas (domain + data)
+│   ├── senas/                   catálogo de señas e imágenes de referencia (domain + data)
 │   └── ui/                      tema y componentes compartidos
 └── feature/
     ├── lecciones/   {domain, data, presentation/{catalogo, detalle}}
-    ├── practica/    {domain, data/camara, presentation}
-    ├── quiz/        {domain, presentation}
+    ├── practica/    {domain, data/camara, presentation/camara}
+    ├── quiz/        {domain, presentation}   quiz con imagen (parte 1) y con cámara (parte 2)
     ├── progreso/    {domain, data, presentation}
     └── diccionario/ {domain, presentation}
 ```
@@ -49,6 +49,8 @@ Para no crear un ciclo, las dependencias entre features van en un solo sentido:
 - `lecciones.domain` → `progreso.domain` (el catálogo necesita el avance para pintarlo)
 - `practica.domain` → `progreso.domain` y `lecciones.domain`
 - `quiz.domain` → `progreso.domain` y `lecciones.domain`
+- `quiz.presentation` → `practica.domain` (el mismo reconocimiento y la cuenta regresiva) y
+  `practica.presentation.camara` (el visor de cámara compartido)
 - `progreso.domain` → solo `core`
 
 Por eso el resumen de progreso muestra el número de lecciones completadas sin denominador:
@@ -172,8 +174,16 @@ MediaPipe: build de release, captura apagada, permiso denegado o la cámara sin 
 
 ## Base de datos
 
-Room, versión 1, seis tablas: `senas`, `lecciones`, `leccion_senas`, `progreso_senas`,
-`lecciones_completadas` y `racha`. Todos los DAO devuelven `Flow`.
+Room, versión 3, siete tablas: `senas`, `lecciones`, `leccion_senas`, `progreso_senas`,
+`lecciones_completadas`, `racha` y `actividad_diaria`. Todos los DAO devuelven `Flow`.
+
+Migraciones, en `core/database/Migraciones.kt`, probadas con `MigrationTestHelper`:
+
+- **1 → 2:** crea `actividad_diaria` para los días de la semana de la racha.
+- **2 → 3:** quita la columna `descripcion` de `senas`. Como SQLite no tiene `DROP COLUMN` antes
+  de Android 14, recrea la tabla. `progreso_senas` y `leccion_senas` se respaldan antes en tablas
+  temporales y se restauran al final, porque su `ON DELETE CASCADE` borraría los intentos del
+  usuario si las claves foráneas estuvieran activas.
 
 El catálogo (27 letras y 5 lecciones) se precarga con un callback de Room en
 `PrecargaDelCatalogo`. La inserción se lanza fuera de la transacción de creación, que es la
@@ -200,8 +210,16 @@ Los esquemas se exportan a `app/schemas`. Al subir la versión hay que escribir 
   para la enie no coincide.
 - **Sin color dinámico.** El color dinámico de Android 12+ se arma con el fondo de pantalla
   del usuario y no garantiza el contraste 4.5:1 del RNF-10. La paleta fija sí está medida.
-- **Las descripciones de las señas son texto de trabajo.** Están en `CatalogoInicial.kt` y
-  hay que validarlas con material de LSC antes de la entrega. La estructura no cambia.
+- **Las señas no tienen descripción de texto; tienen imagen.** Las descripciones se quitaron
+  porque nunca se validaron con material de LSC (RF02, ERS v2.1). Las imágenes están en
+  `res/drawable-nodpi/sena_<letra>.webp` y se asocian por letra en `ReferenciasEnRecursos.kt`,
+  sin campo en la base. Una letra sin imagen muestra la letra grande y no entra en el quiz con
+  imagen. Fuentes en `docs/fuentes_senas.md`.
+- **El quiz tiene dos partes y aprueba la de cámara.** La parte con imagen no registra intentos;
+  la parte con cámara sí, y es la que aprueba la lección (70 %). Diseño en
+  `docs/diseno/quiz-de-la-leccion.md`.
+- **Cada intento empieza solo tras una cuenta regresiva de 3 segundos** (`CuentaRegresivaUseCase`),
+  en la práctica y en el quiz con cámara. «Iniciar intento» queda de respaldo.
 
 ## Privacidad
 
@@ -226,24 +244,43 @@ No es una capa de pintura al final:
 ## Pruebas
 
 ```
-./gradlew testDebugUnitTest        # rápidas, en la JVM
-./gradlew connectedDebugAndroidTest # base de datos, necesita emulador o dispositivo
+./gradlew testDebugUnitTest                # rápidas, en la JVM
+./gradlew connectedDebugAndroidTest        # base de datos y Compose, necesita emulador o dispositivo
+./gradlew coberturaDomain -Pcobertura      # cobertura de domain (RNF19)
 ```
+
+La cobertura queda en `app/build/reports/jacoco/coberturaDomain/html/index.html`. Sin
+`-Pcobertura` el agente de JaCoCo no se activa, así que el build y el CI no cambian. Última
+medición: 93,8 % de las líneas de domain.
 
 **En `app/src/test` (JVM, sin emulador):**
 
 - Casos de uso de `domain`: reglas de racha, criterio de "seña dominada", registro de
   intentos, resumen de progreso, evaluación de intentos con clasificador falso, generación
-  y calificación de quiz, armado del catálogo con progreso y búsqueda en el diccionario.
+  y calificación de los dos quizzes (imagen y cámara: letras al azar sin repetir seguidas,
+  intentos por pregunta, aprobación), paso tras el acierto en la práctica, cuenta regresiva,
+  imágenes de referencia y casos sin imagen, armado del catálogo con progreso y búsqueda en el
+  diccionario.
 - Datos de precarga: que el catálogo tenga 27 letras sin repetir, que sus etiquetas sean las
   que el modelo conoce, que cada seña practicable esté en exactamente una lección y que la
   enie no esté en ninguna.
 - ViewModel: que publiquen el estado correcto y que un fallo del repositorio termine en
   `hayError`, no en una carga infinita.
 
-**En `app/src/androidTest` (SQLite de verdad):** que la precarga corra al crear la base, que
-la relación lección-señas devuelva lo esperado, que registrar intentos acumule y que la
-racha y las lecciones completadas no se dupliquen.
+**En `app/src/androidTest` (SQLite de verdad y Compose):**
+
+- Base de datos: que la precarga corra al crear la base, que la relación lección-señas devuelva
+  lo esperado, que registrar intentos acumule y que la racha y las lecciones completadas no se
+  dupliquen.
+- Migraciones 1 → 2 y 2 → 3: que conserven intentos, lecciones aprobadas, racha y días
+  activos, también con las claves foráneas activas.
+- Repositorios de señas y lecciones con sus imágenes de referencia.
+- Compose: la lección carga y arranca por la primera letra; el quiz con imagen de punta a
+  punta (ViewModel, repositorios y Room reales, sin Hilt de pruebas); la pantalla del quiz con
+  cámara; la cuenta regresiva y el botón tras el acierto en la práctica.
+
+El CI corre las de la JVM en cada pull request; las instrumentadas, en el push a `master` o a
+mano desde *Actions → CI → Run workflow* eligiendo la rama.
 
 Los dobles están escritos a mano en `fakes/Fakes.kt`, sin librería de mocks: son pocas
 interfaces y así las pruebas se leen sin conocer una API extra.
@@ -307,13 +344,15 @@ Los reportes de pruebas y de lint quedan como artefactos de cada ejecución.
 
 ## Estado
 
-Lo que **no** está hecho:
+El estado de cada requerimiento funcional (dónde está, qué prueba lo cubre y qué falta) está en
+`docs/trazabilidad_rf.md`. En resumen, lo que **no** está hecho:
 
-- **RF15**: el quiz debería pedir ejecutar la seña frente a la cámara reutilizando el motor de
-  reconocimiento. Hoy es de opción múltiple en texto. Es un *Must* pendiente.
-- **RF02**: falta la imagen o clip de referencia de cada seña; solo hay descripción textual.
-- **RF26**: ajustar el umbral y el tamaño de fuente desde la app.
-- Las extensiones (insignias, repaso espaciado, estadísticas detalladas).
+- **RF19:** registrar y mostrar las categorías completadas (las lecciones sí se registran).
+- **RF14 y RF26:** el criterio de «dominada» y el ajuste del umbral difieren del ERS. Están
+  pendientes de decisión del equipo (sección 8 del ERS).
+- Las extensiones: insignias (RF22), los otros formatos de quiz (RF17), estadísticas (RF24),
+  repaso espaciado (RF25) y tema oscuro (RF27).
 
-Pendiente de medir en dispositivo: los fps del RNF02 y la latencia del RNF01, y si el modo
-estricto del filtrado de vocabulario conviene más que el permisivo.
+Pendiente de medir en dispositivo: los fps del RNF02, la latencia del RNF01, la exactitud con
+cámara real del RNF04 y la rotación del RNF14.
+

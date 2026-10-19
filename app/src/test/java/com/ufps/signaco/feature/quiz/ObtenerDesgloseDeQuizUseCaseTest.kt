@@ -32,10 +32,25 @@ class ObtenerDesgloseDeQuizUseCaseTest {
 
     @Test
     fun `respeta el orden del quiz y marca las falladas`() = runTest {
-        val desglose = crearCaso()("vocales", listOf("O", "A"), listOf("A")).first()!!
+        val desglose = crearCaso()("vocales", listOf("O", "A"), listOf(true, false)).first()!!
 
         assertEquals(listOf("O", "A"), desglose.senas.map { it.sena.id })
         assertEquals(listOf(true, false), desglose.senas.map { it.acerto })
+        assertEquals(listOf("A"), desglose.porRepasar.map { it.id })
+    }
+
+    @Test
+    fun `agrupa una letra que salio varias veces y cuenta sus aciertos`() = runTest {
+        val desglose = crearCaso()(
+            "vocales",
+            listOf("A", "I", "A", "O", "A"),
+            listOf(true, true, false, true, true),
+        ).first()!!
+
+        assertEquals(listOf("A", "I", "O"), desglose.senas.map { it.sena.id })
+        val a = desglose.senas.first()
+        assertEquals(3, a.preguntas)
+        assertEquals(2, a.aciertos)
         assertEquals(listOf("A"), desglose.porRepasar.map { it.id })
     }
 
@@ -45,13 +60,13 @@ class ObtenerDesgloseDeQuizUseCaseTest {
             progresoInicial = listOf(ProgresoSena("I", intentos = 6, aciertos = 6)),
         )
 
-        val desglose = crearCaso(progreso)("vocales", listOf("A", "I"), emptyList()).first()!!
+        val desglose = crearCaso(progreso)("vocales", listOf("A", "I"), listOf(true, true)).first()!!
 
         assertEquals(listOf(false, true), desglose.senas.map { it.dominada })
     }
 
     @Test
     fun `una leccion que no existe no tiene desglose`() = runTest {
-        assertNull(crearCaso()("no_existe", listOf("A"), emptyList()).first())
+        assertNull(crearCaso()("no_existe", listOf("A"), listOf(true)).first())
     }
 }
