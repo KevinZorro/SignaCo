@@ -50,6 +50,7 @@ class PreferenciasRepositoryDataStore @Inject constructor(
                     altoContraste = preferencias[CLAVE_CONTRASTE] ?: porDefecto.altoContraste,
                     reducirAnimaciones = preferencias[CLAVE_ANIMACIONES] ?: porDefecto.reducirAnimaciones,
                     primerUsoCompletado = preferencias[CLAVE_PRIMER_USO] ?: porDefecto.primerUsoCompletado,
+                    recordatoriosActivos = preferencias[CLAVE_RECORDATORIOS] ?: porDefecto.recordatoriosActivos,
                 )
             }
 
@@ -71,6 +72,10 @@ class PreferenciasRepositoryDataStore @Inject constructor(
 
     override suspend fun cambiarSubtitulosEnClips(activo: Boolean) {
         contexto.dataStore.edit { it[CLAVE_SUBTITULOS] = activo }
+    }
+
+    override suspend fun cambiarRecordatoriosActivos(activo: Boolean) {
+        contexto.dataStore.edit { it[CLAVE_RECORDATORIOS] = activo }
     }
 
     override suspend fun guardarApariencia(
@@ -95,6 +100,7 @@ class PreferenciasRepositoryDataStore @Inject constructor(
 
     private companion object {
         val CLAVE_PISTAS = booleanPreferencesKey("mostrar_pistas")
+        val CLAVE_RECORDATORIOS = booleanPreferencesKey("recordatorios_activos")
         val CLAVE_HAPTICA = booleanPreferencesKey("retroalimentacion_haptica")
         val CLAVE_MANO = stringPreferencesKey("mano_dominante")
         val CLAVE_VELOCIDAD = stringPreferencesKey("velocidad_de_clips")

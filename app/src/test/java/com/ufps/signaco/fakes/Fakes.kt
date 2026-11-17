@@ -166,3 +166,67 @@ class SenaRepositoryQueFalla : SenaRepository {
     override fun observarSena(senaId: String): Flow<Sena?> =
         flow { throw IllegalStateException("falla simulada") }
 }
+
+class FakePreferenciasRepository(
+    inicial: com.ufps.signaco.core.preferencias.domain.PreferenciasUsuario = com.ufps.signaco.core.preferencias.domain.PreferenciasUsuario(),
+) : com.ufps.signaco.core.preferencias.domain.PreferenciasRepository {
+    val preferencias = MutableStateFlow(inicial)
+
+    override fun observarPreferencias(): Flow<com.ufps.signaco.core.preferencias.domain.PreferenciasUsuario> = preferencias
+
+    override suspend fun cambiarMostrarPistas(activo: Boolean) {
+        preferencias.value = preferencias.value.copy(mostrarPistas = activo)
+    }
+
+    override suspend fun cambiarRetroalimentacionHaptica(activo: Boolean) {
+        preferencias.value = preferencias.value.copy(retroalimentacionHaptica = activo)
+    }
+
+    override suspend fun cambiarManoDominante(mano: com.ufps.signaco.core.preferencias.domain.ManoDominante) {
+        preferencias.value = preferencias.value.copy(manoDominante = mano)
+    }
+
+    override suspend fun cambiarVelocidadDeClips(velocidad: com.ufps.signaco.core.preferencias.domain.VelocidadDeClips) {
+        preferencias.value = preferencias.value.copy(velocidadDeClips = velocidad)
+    }
+
+    override suspend fun cambiarSubtitulosEnClips(activo: Boolean) {
+        preferencias.value = preferencias.value.copy(subtitulosEnClips = activo)
+    }
+
+    override suspend fun cambiarRecordatoriosActivos(activo: Boolean) {
+        preferencias.value = preferencias.value.copy(recordatoriosActivos = activo)
+    }
+
+    override suspend fun guardarApariencia(
+        tamano: com.ufps.signaco.core.preferencias.domain.TamanoDeTexto,
+        altoContraste: Boolean,
+        reducirAnimaciones: Boolean,
+    ) {
+        preferencias.value = preferencias.value.copy(
+            tamanoDeTexto = tamano,
+            altoContraste = altoContraste,
+            reducirAnimaciones = reducirAnimaciones,
+        )
+    }
+
+    override suspend fun marcarPrimerUsoCompletado() {
+        preferencias.value = preferencias.value.copy(primerUsoCompletado = true)
+    }
+}
+
+class FakeProgramadorDeRecordatorios : com.ufps.signaco.core.notificaciones.domain.ProgramadorDeRecordatorios {
+    var programado = false
+    var ultimaHora = 0
+    var ultimoMinuto = 0
+
+    override fun programarRecordatorioDiario(hora: Int, minuto: Int) {
+        programado = true
+        ultimaHora = hora
+        ultimoMinuto = minuto
+    }
+
+    override fun cancelarRecordatorio() {
+        programado = false
+    }
+}

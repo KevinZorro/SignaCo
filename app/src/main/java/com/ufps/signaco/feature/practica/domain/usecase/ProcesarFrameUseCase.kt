@@ -15,6 +15,10 @@ import javax.inject.Inject
  * [EvaluarIntentoUseCase] se llama UNA VEZ POR INTENTO porque registra progreso. Quien decide
  * que un conjunto de frames constituye un intento es el suavizado temporal.
  *
+ * Además, promedia la coincidencia durante la ventana de estabilidad (hasta 1 segundo) para que
+ * la UI muestre un valor suave y continuo, en lugar de parpadear con el valor crudo del primer
+ * frame que aparezca.
+ *
  * Sobre la doble clasificación: al confirmarse, el frame se vuelve a clasificar dentro de
  * [EvaluarIntentoUseCase]. Es a propósito, para no tocar ese caso de uso. Cuesta una inferencia
  * extra POR INTENTO CONFIRMADO, no por frame, y como la clasificación es determinista sobre la
@@ -52,18 +56,27 @@ class ProcesarFrameUseCase @Inject constructor(
                 )
             }
         }
-        val coincidencia = coincidenciaCon(senaObjetivo, clasificacion)
+        val coincidenciaCruda = coincidenciaCon(senaObjetivo, clasificacion)
 
-        val confirmada = estabilizador.registrar(clave)
-            ?: return ResultadoDeFrame.Buscando(
+        val confirmada = estabilizador.registrar(
+            clave = clave,
+            coincidencia = coincidenciaCruda,
+            timestampMs = frame.timestampMs,
+        )
+
+        val coincidenciaPromedio = estabilizador.coincidenciaPromedio
+
+        if (confirmada == null) {
+            return ResultadoDeFrame.Buscando(
                 estado = EstadoDeReconocimiento.RECONOCIENDO,
                 avance = estabilizador.avance,
                 total = estabilizador.k,
-                coincidencia = coincidencia,
+                coincidencia = coincidenciaPromedio,
             )
+        }
 
         if (confirmada == EstabilizadorDePredicciones.CLAVE_NO_RECONOCIDA) {
-            return ResultadoDeFrame.NoReconocidaEstable(coincidencia)
+            return ResultadoDeFrame.NoReconocidaEstable(coincidenciaPromedio)
         }
 
         return ResultadoDeFrame.Confirmado(evaluarIntento(senaObjetivo, frame.landmarks))

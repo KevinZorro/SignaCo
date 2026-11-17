@@ -1,5 +1,10 @@
 package com.ufps.signaco.feature.ajustes.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,10 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
@@ -50,6 +57,7 @@ fun AjustesScreen(
         onCambiarVelocidad = viewModel::cambiarVelocidadDeClips,
         onCambiarVibracion = viewModel::cambiarVibracion,
         onCambiarSubtitulos = viewModel::cambiarSubtitulos,
+        onCambiarRecordatorios = viewModel::cambiarRecordatorios,
         modifier = modifier,
     )
 }
@@ -63,8 +71,33 @@ fun AjustesContenido(
     onCambiarVelocidad: (VelocidadDeClips) -> Unit,
     onCambiarVibracion: (Boolean) -> Unit,
     onCambiarSubtitulos: (Boolean) -> Unit,
+    onCambiarRecordatorios: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val contexto = LocalContext.current
+    val launcherPermisoNotificacion = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { concedido ->
+            onCambiarRecordatorios(concedido)
+        },
+    )
+
+    val alternarRecordatorios: (Boolean) -> Unit = { activar ->
+        if (activar && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val concedido = ContextCompat.checkSelfPermission(
+                contexto,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (concedido) {
+                onCambiarRecordatorios(true)
+            } else {
+                launcherPermisoNotificacion.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            onCambiarRecordatorios(activar)
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -116,6 +149,18 @@ fun AjustesContenido(
                         descripcion = stringResource(R.string.ajustes_vibracion_descripcion),
                         activo = preferencias.retroalimentacionHaptica,
                         onCambio = onCambiarVibracion,
+                    )
+                }
+            }
+
+            Column {
+                EncabezadoDeGrupo(stringResource(R.string.ajustes_recordatorios))
+                GrupoDeAjustes {
+                    FilaDeInterruptor(
+                        titulo = stringResource(R.string.ajustes_recordatorios_titulo),
+                        descripcion = stringResource(R.string.ajustes_recordatorios_descripcion),
+                        activo = preferencias.recordatoriosActivos,
+                        onCambio = alternarRecordatorios,
                     )
                 }
             }
@@ -179,13 +224,14 @@ internal fun TamanoDeTexto.etiqueta(): Int = when (this) {
 private fun AjustesPreview() {
     SignaCoTheme {
         AjustesContenido(
-            preferencias = PreferenciasUsuario(altoContraste = true, tamanoDeTexto = TamanoDeTexto.GRANDE),
+            preferencias = PreferenciasUsuario(),
             onVolver = {},
             onAbrirTamanoYContraste = {},
             onCambiarMano = {},
             onCambiarVelocidad = {},
             onCambiarVibracion = {},
             onCambiarSubtitulos = {},
+            onCambiarRecordatorios = {},
         )
     }
 }

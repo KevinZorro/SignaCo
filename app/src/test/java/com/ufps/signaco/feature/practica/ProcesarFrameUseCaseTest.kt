@@ -148,4 +148,16 @@ class ProcesarFrameUseCaseTest {
 
         assertEquals(0.3f, (resultado as ResultadoDeFrame.NoReconocidaEstable).coincidencia, 0.0001f)
     }
+
+    @Test
+    fun `promedia la coincidencia mostrada en los frames sucesivos`() = runTest {
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.40f)
+        caso("A", frameConMano, estabilizador)
+
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.60f)
+        val segundo = caso("A", frameConMano, estabilizador)
+
+        // Promedio de 0.40 y 0.60 es 0.50
+        assertEquals(0.50f, (segundo as ResultadoDeFrame.Buscando).coincidencia, 0.0001f)
+    }
 }

@@ -98,4 +98,42 @@ class EstabilizadorDePrediccionesTest {
 
         assertEquals(IllegalArgumentException::class, error!!::class)
     }
+
+    @Test
+    fun `con ventana de 1 segundo no confirma si no ha transcurrido el tiempo aunque tenga k frames`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+
+        // 3 frames llegan rápido (ej. a los 200 ms)
+        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 0L))
+        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 100L))
+        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 200L))
+
+        // Al cumplirse el segundo (1.000 ms), confirma la seña
+        assertEquals("A", estabilizador.registrar("A", coincidencia = 0.85f, timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `promedia la coincidencia sobre las muestras recientes de la ventana de 1 segundo`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+
+        estabilizador.registrar("A", coincidencia = 0.60f, timestampMs = 0L)
+        estabilizador.registrar("A", coincidencia = 0.80f, timestampMs = 200L)
+        estabilizador.registrar("A", coincidencia = 1.00f, timestampMs = 400L)
+
+        // Promedio: (0.60 + 0.80 + 1.00) / 3 = 0.80
+        assertEquals(0.80f, estabilizador.coincidenciaPromedio, 0.001f)
+    }
+
+    @Test
+    fun `desecha muestras mas viejas que la ventana de 1 segundo para el promedio`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+
+        estabilizador.registrar("A", coincidencia = 0.20f, timestampMs = 0L)
+        estabilizador.registrar("A", coincidencia = 0.80f, timestampMs = 1_100L)
+        estabilizador.registrar("A", coincidencia = 0.90f, timestampMs = 1_200L)
+
+        // La muestra de t=0L quedó fuera de los últimos 1.000 ms respecto a 1_200L
+        // Promedio de las muestras vigentes: (0.80 + 0.90) / 2 = 0.85
+        assertEquals(0.85f, estabilizador.coincidenciaPromedio, 0.001f)
+    }
 }
