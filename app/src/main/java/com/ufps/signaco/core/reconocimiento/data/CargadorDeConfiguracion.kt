@@ -51,6 +51,8 @@ class CargadorDeConfiguracion @Inject constructor(
                     ?: ConfiguracionDeReconocimiento.UMBRAL_POR_DEFECTO,
                 k = json.k ?: ConfiguracionDeReconocimiento.K_POR_DEFECTO,
                 procedencia = "assets/$ARCHIVO",
+                ventanaMs = json.ventanaMs ?: ConfiguracionDeReconocimiento.VENTANA_MS_POR_DEFECTO,
+                fraccionMinima = json.fraccionMinima ?: ConfiguracionDeReconocimiento.FRACCION_MINIMA_POR_DEFECTO,
             )
         } catch (e: Exception) {
             ConfiguracionDeReconocimiento.RESPALDO.copy(
@@ -67,6 +69,8 @@ class CargadorDeConfiguracion @Inject constructor(
         @SerialName("indice_rechazo") val indiceDeRechazo: Int? = null,
         @SerialName("umbral_por_letra") val umbralPorLetra: Map<String, Float>? = null,
         @SerialName("umbral_global_fallback") val umbralGlobal: Float? = null,
+        @SerialName("ventana_ms") val ventanaMs: Long? = null,
+        @SerialName("fraccion_minima") val fraccionMinima: Float? = null,
     )
 
     private companion object {

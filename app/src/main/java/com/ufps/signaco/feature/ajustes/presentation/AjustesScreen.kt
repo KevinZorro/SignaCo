@@ -1,8 +1,12 @@
 package com.ufps.signaco.feature.ajustes.presentation
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -13,9 +17,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,6 +37,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
 import com.ufps.signaco.core.preferencias.domain.ManoDominante
@@ -40,6 +56,7 @@ import com.ufps.signaco.core.ui.componentes.Navegacion
 import com.ufps.signaco.core.ui.componentes.Separador
 import com.ufps.signaco.core.ui.theme.Espacio
 import com.ufps.signaco.core.ui.theme.SignaCoTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun AjustesScreen(
@@ -75,26 +92,59 @@ fun AjustesContenido(
     modifier: Modifier = Modifier,
 ) {
     val contexto = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var tienePermiso by remember { mutableStateOf(tienePermisoNotificaciones(contexto)) }
+
+    // Reevalúa el permiso del sistema al volver a la pantalla (por ejemplo, desde Ajustes del sistema)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                tienePermiso = tienePermisoNotificaciones(contexto)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val mensajePermisoDenegado = stringResource(R.string.ajustes_recordatorios_permiso_denegado)
+    val accionAbrirAjustes = stringResource(R.string.ajustes_recordatorios_abrir_ajustes)
+
     val launcherPermisoNotificacion = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { concedido ->
-            onCambiarRecordatorios(concedido)
+            tienePermiso = concedido
+            if (concedido) {
+                onCambiarRecordatorios(true)
+            } else {
+                onCambiarRecordatorios(false)
+                scope.launch {
+                    val resultado = snackbarHostState.showSnackbar(
+                        message = mensajePermisoDenegado,
+                        actionLabel = accionAbrirAjustes,
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (resultado == SnackbarResult.ActionPerformed) {
+                        abrirAjustesDeNotificaciones(contexto)
+                    }
+                }
+            }
         },
     )
 
     val alternarRecordatorios: (Boolean) -> Unit = { activar ->
-        if (activar && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val concedido = ContextCompat.checkSelfPermission(
-                contexto,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == PackageManager.PERMISSION_GRANTED
-            if (concedido) {
-                onCambiarRecordatorios(true)
-            } else {
+        if (activar) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !tienePermisoNotificaciones(contexto)) {
                 launcherPermisoNotificacion.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                onCambiarRecordatorios(true)
             }
         } else {
-            onCambiarRecordatorios(activar)
+            onCambiarRecordatorios(false)
         }
     }
 
@@ -102,6 +152,7 @@ fun AjustesContenido(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { BarraSuperior(navegacion = Navegacion.VOLVER, onNavegar = onVolver) },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { relleno ->
         Column(
             verticalArrangement = Arrangement.spacedBy(Espacio.lg),
@@ -159,7 +210,8 @@ fun AjustesContenido(
                     FilaDeInterruptor(
                         titulo = stringResource(R.string.ajustes_recordatorios_titulo),
                         descripcion = stringResource(R.string.ajustes_recordatorios_descripcion),
-                        activo = preferencias.recordatoriosActivos,
+                        // El interruptor solo se ve encendido si la preferencia está activa y el permiso concedido
+                        activo = preferencias.recordatoriosActivos && tienePermiso,
                         onCambio = alternarRecordatorios,
                     )
                 }
@@ -190,6 +242,29 @@ fun AjustesContenido(
             )
         }
     }
+}
+
+private fun tienePermisoNotificaciones(context: Context): Boolean =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+    } else {
+        true
+    }
+
+private fun abrirAjustesDeNotificaciones(context: Context) {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        }
+    } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+        }
+    }
+    context.startActivity(intent)
 }
 
 /** «Texto grande · Alto contraste», como en Figma, con lo que esté activo. */
@@ -224,7 +299,7 @@ internal fun TamanoDeTexto.etiqueta(): Int = when (this) {
 private fun AjustesPreview() {
     SignaCoTheme {
         AjustesContenido(
-            preferencias = PreferenciasUsuario(),
+            preferencias = PreferenciasUsuario(altoContraste = true, tamanoDeTexto = TamanoDeTexto.GRANDE),
             onVolver = {},
             onAbrirTamanoYContraste = {},
             onCambiarMano = {},

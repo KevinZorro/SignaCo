@@ -255,7 +255,9 @@ La cámara viene en el siguiente paso.</string>
     <!-- Recordatorios de práctica (Notificaciones locales) -->
     <string name="ajustes_recordatorios">Recordatorios</string>
     <string name="ajustes_recordatorios_titulo">Recordatorio diario de práctica</string>
-    <string name="ajustes_recordatorios_descripcion">Recibe un recordatorio cada tarde para practicar tus señas.</string>
+    <string name="ajustes_recordatorios_descripcion">Recibe un recordatorio cada tarde (alrededor de las 6 p.m.) para practicar tus señas.</string>
+    <string name="ajustes_recordatorios_permiso_denegado">Se necesita permiso de notificaciones para los recordatorios.</string>
+    <string name="ajustes_recordatorios_abrir_ajustes">Abrir ajustes</string>
     <string name="notificacion_canal_nombre">Recordatorios de práctica</string>
     <string name="notificacion_canal_descripcion">Avisos diarios para practicar y mantener tu racha en SignaCO.</string>
     <string name="recordatorio_mensaje_1">¿Tienes 3 minutos libres? Recuerda practicar tus señas de hoy.</string>

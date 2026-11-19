@@ -1,12 +1,10 @@
 package com.ufps.signaco
 
 import android.app.Application
-import com.ufps.signaco.core.notificaciones.domain.ProgramadorDeRecordatorios
-import com.ufps.signaco.core.preferencias.domain.PreferenciasRepository
+import com.ufps.signaco.core.notificaciones.domain.SincronizarRecordatoriosUseCase
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,18 +13,12 @@ import javax.inject.Inject
 class SignaCoApplication : Application() {
 
     @Inject
-    lateinit var programadorDeRecordatorios: ProgramadorDeRecordatorios
-
-    @Inject
-    lateinit var preferenciasRepository: PreferenciasRepository
+    lateinit var sincronizarRecordatorios: SincronizarRecordatoriosUseCase
 
     override fun onCreate() {
         super.onCreate()
         CoroutineScope(Dispatchers.Default).launch {
-            val preferencias = preferenciasRepository.observarPreferencias().first()
-            if (preferencias.recordatoriosActivos) {
-                programadorDeRecordatorios.programarRecordatorioDiario()
-            }
+            sincronizarRecordatorios()
         }
     }
 }

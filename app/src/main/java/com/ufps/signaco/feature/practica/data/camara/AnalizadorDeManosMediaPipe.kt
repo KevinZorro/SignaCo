@@ -152,6 +152,7 @@ class AnalizadorDeManosMediaPipe(
                 milisegundosDeDeteccion = milisegundos,
                 puntosEnImagen = enImagen,
                 proporcionDeImagen = proporcionDeImagen,
+                timestampMs = resultado.timestampMs(),
             ),
         )
     }

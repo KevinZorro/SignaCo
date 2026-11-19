@@ -19,7 +19,7 @@ class FrameDeLandmarks(
     /** Ancho entre alto de esa imagen, para encajar los puntos en la vista previa. */
     val proporcionDeImagen: Float = 0f,
     /** Marca de tiempo en milisegundos en la que se capturó o procesó el frame. */
-    val timestampMs: Long = System.currentTimeMillis(),
+    val timestampMs: Long = 0L,
 ) {
     val hayMano: Boolean get() = landmarks.isNotEmpty()
 

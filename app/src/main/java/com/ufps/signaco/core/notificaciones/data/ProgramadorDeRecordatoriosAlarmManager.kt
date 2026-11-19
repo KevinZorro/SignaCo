@@ -41,8 +41,8 @@ class ProgramadorDeRecordatoriosAlarmManager @Inject constructor(
 
         CanalDeNotificaciones.crearCanalSiEsNecesario(contexto)
 
-        // Usamos setInexactRepeating con INTERVAL_DAY para cumplir las directrices
-        // de batería y Doze mode de Android Developers para recordatorios diarios.
+        // Usamos setInexactRepeating con INTERVAL_DAY para disparar alrededor de las 6 p.m.
+        // sin requerir permiso de alarma exacta, optimizando batería y respetando Doze mode.
         alarmManager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
             proximoDisparo.timeInMillis,

@@ -14,7 +14,7 @@ import com.ufps.signaco.MainActivity
 import com.ufps.signaco.R
 import com.ufps.signaco.core.notificaciones.domain.DecisionDeRecordatorio
 import com.ufps.signaco.core.notificaciones.domain.EvaluarEnvioDeRecordatorioUseCase
-import com.ufps.signaco.core.notificaciones.domain.ProgramadorDeRecordatorios
+import com.ufps.signaco.core.notificaciones.domain.SincronizarRecordatoriosUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +23,8 @@ import javax.inject.Inject
 
 /**
  * Receptor de la alarma de recordatorio diario.
- * Evalúa si el usuario ya practicó o si tiene los recordatorios activos antes de emitir.
+ * Evalúa si el usuario ya practicó o si tiene los recordatorios activos antes de emitir,
+ * y sincroniza la siguiente alarma según las preferencias.
  */
 @AndroidEntryPoint
 class RecordatorioReceiver : BroadcastReceiver() {
@@ -32,7 +33,7 @@ class RecordatorioReceiver : BroadcastReceiver() {
     lateinit var evaluarEnvio: EvaluarEnvioDeRecordatorioUseCase
 
     @Inject
-    lateinit var programador: ProgramadorDeRecordatorios
+    lateinit var sincronizarRecordatorios: SincronizarRecordatoriosUseCase
 
     override fun onReceive(context: Context, intent: Intent) {
         val pendingResult = goAsync()
@@ -40,14 +41,22 @@ class RecordatorioReceiver : BroadcastReceiver() {
             try {
                 when (val decision = evaluarEnvio()) {
                     is DecisionDeRecordatorio.Enviar -> {
-                        mostrarNotificacion(context, decision.mensaje.titulo, decision.mensaje.cuerpo)
+                        val cuerpoResId = when (decision.indiceMensaje) {
+                            0 -> R.string.recordatorio_mensaje_1
+                            1 -> R.string.recordatorio_mensaje_2
+                            2 -> R.string.recordatorio_mensaje_3
+                            3 -> R.string.recordatorio_mensaje_4
+                            else -> R.string.recordatorio_mensaje_5
+                        }
+                        val cuerpo = context.getString(cuerpoResId)
+                        val titulo = context.getString(R.string.app_name)
+                        mostrarNotificacion(context, titulo, cuerpo)
                     }
                     is DecisionDeRecordatorio.NoEnviar -> {
                         // No se envía (ya practicó hoy o están desactivados)
                     }
                 }
-                // Reprogramar para el día siguiente a las 18:00
-                programador.programarRecordatorioDiario()
+                sincronizarRecordatorios()
             } finally {
                 pendingResult.finish()
             }

@@ -2,7 +2,7 @@ package com.ufps.signaco.feature.ajustes.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ufps.signaco.core.notificaciones.domain.ProgramadorDeRecordatorios
+import com.ufps.signaco.core.notificaciones.domain.SincronizarRecordatoriosUseCase
 import com.ufps.signaco.core.preferencias.domain.ManoDominante
 import com.ufps.signaco.core.preferencias.domain.PreferenciasRepository
 import com.ufps.signaco.core.preferencias.domain.PreferenciasUsuario
@@ -18,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AjustesViewModel @Inject constructor(
     private val preferenciasRepository: PreferenciasRepository,
-    private val programadorDeRecordatorios: ProgramadorDeRecordatorios,
+    private val sincronizarRecordatorios: SincronizarRecordatoriosUseCase,
 ) : ViewModel() {
 
     val preferencias: StateFlow<PreferenciasUsuario> = preferenciasRepository.observarPreferencias()
@@ -43,11 +43,7 @@ class AjustesViewModel @Inject constructor(
     fun cambiarRecordatorios(activos: Boolean) {
         viewModelScope.launch {
             preferenciasRepository.cambiarRecordatoriosActivos(activos)
-            if (activos) {
-                programadorDeRecordatorios.programarRecordatorioDiario()
-            } else {
-                programadorDeRecordatorios.cancelarRecordatorio()
-            }
+            sincronizarRecordatorios()
         }
     }
 }

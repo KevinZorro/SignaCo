@@ -2,10 +2,7 @@ package com.ufps.signaco.core.notificaciones
 
 import com.ufps.signaco.core.notificaciones.domain.DecisionDeRecordatorio
 import com.ufps.signaco.core.notificaciones.domain.EvaluarEnvioDeRecordatorioUseCase
-import com.ufps.signaco.core.notificaciones.domain.MensajeDeRecordatorio
 import com.ufps.signaco.core.notificaciones.domain.MotivoNoEnvio
-import com.ufps.signaco.core.notificaciones.domain.ProveedorDeMensajesRecordatorio
-import com.ufps.signaco.core.preferencias.domain.PreferenciasUsuario
 import com.ufps.signaco.fakes.FakePreferenciasRepository
 import com.ufps.signaco.fakes.FakeRachaRepository
 import com.ufps.signaco.fakes.RelojFijo
@@ -20,15 +17,11 @@ class EvaluarEnvioDeRecordatorioUseCaseTest {
     private val preferencias = FakePreferenciasRepository()
     private val racha = FakeRachaRepository()
     private val reloj = RelojFijo(dia = 100L)
-    private val proveedor = object : ProveedorDeMensajesRecordatorio {
-        override fun obtenerMensaje() = MensajeDeRecordatorio("SignaCO", "Mensaje de prueba")
-    }
 
     private val useCase = EvaluarEnvioDeRecordatorioUseCase(
         preferenciasRepository = preferencias,
         rachaRepository = racha,
         reloj = reloj,
-        proveedorDeMensajes = proveedor,
     )
 
     @Test
@@ -66,7 +59,19 @@ class EvaluarEnvioDeRecordatorioUseCaseTest {
 
         assertTrue(resultado is DecisionDeRecordatorio.Enviar)
         val decision = resultado as DecisionDeRecordatorio.Enviar
-        assertEquals("SignaCO", decision.mensaje.titulo)
-        assertEquals("Mensaje de prueba", decision.mensaje.cuerpo)
+        assertEquals((100L % 5).toInt(), decision.indiceMensaje)
+    }
+
+    @Test
+    fun `el indice del mensaje rota segun el reloj del dia deterministamente`() = runTest {
+        preferencias.cambiarRecordatoriosActivos(true)
+        racha.guardarRacha(Racha(diasConsecutivos = 1, mejorRacha = 1, ultimoDiaActivo = -1L))
+
+        for (dia in 0L..9L) {
+            reloj.dia = dia
+            val resultado = useCase()
+            assertTrue(resultado is DecisionDeRecordatorio.Enviar)
+            assertEquals((dia % 5).toInt(), (resultado as DecisionDeRecordatorio.Enviar).indiceMensaje)
+        }
     }
 }

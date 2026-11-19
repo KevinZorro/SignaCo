@@ -5,20 +5,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** RF07: una seña se confirma solo si se mantiene estable durante k frames consecutivos. */
+/** RF07: suavizado temporal por frames consecutivos o ventana de tiempo con votación por mayoría. */
 class EstabilizadorDePrediccionesTest {
 
     @Test
-    fun `no confirma nada antes de completar los k frames`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3)
+    fun `modo legacy - no confirma nada antes de completar los k frames`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 0L)
 
         assertNull(estabilizador.registrar("A"))
         assertNull(estabilizador.registrar("A"))
     }
 
     @Test
-    fun `confirma al llegar al k-esimo frame igual`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3)
+    fun `modo legacy - confirma al llegar al k-esimo frame igual`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 0L)
 
         estabilizador.registrar("A")
         estabilizador.registrar("A")
@@ -27,18 +27,17 @@ class EstabilizadorDePrediccionesTest {
     }
 
     @Test
-    fun `no vuelve a confirmar mientras se sostiene la misma sena`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3)
+    fun `modo legacy - no vuelve a confirmar mientras se sostiene la misma sena`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 0L)
         repeat(3) { estabilizador.registrar("A") }
 
-        // Sin este pestillo, a 30 fps se registraría un intento nuevo cada k frames.
         assertNull(estabilizador.registrar("A"))
         assertNull(estabilizador.registrar("A"))
     }
 
     @Test
-    fun `una prediccion distinta rompe la racha`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3)
+    fun `modo legacy - una prediccion distinta rompe la racha`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 0L)
 
         estabilizador.registrar("A")
         estabilizador.registrar("B")
@@ -48,8 +47,8 @@ class EstabilizadorDePrediccionesTest {
     }
 
     @Test
-    fun `volver a una sena ya confirmada la confirma de nuevo`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 2)
+    fun `modo legacy - volver a una sena ya confirmada la confirma de nuevo`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 2, ventanaMs = 0L)
         estabilizador.registrar("A")
         assertEquals("A", estabilizador.registrar("A"))
 
@@ -61,8 +60,8 @@ class EstabilizadorDePrediccionesTest {
     }
 
     @Test
-    fun `reiniciar borra la racha y el pestillo`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 2)
+    fun `modo legacy - reiniciar borra la racha y el pestillo`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 2, ventanaMs = 0L)
         estabilizador.registrar("A")
         assertEquals("A", estabilizador.registrar("A"))
 
@@ -75,7 +74,7 @@ class EstabilizadorDePrediccionesTest {
 
     @Test
     fun `el avance cuenta los frames consecutivos iguales`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3)
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 0L)
 
         estabilizador.registrar("A")
         assertEquals(1, estabilizador.avance)
@@ -87,7 +86,7 @@ class EstabilizadorDePrediccionesTest {
 
     @Test
     fun `con k igual a uno confirma en el primer frame`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 1)
+        val estabilizador = EstabilizadorDePredicciones(k = 1, ventanaMs = 0L)
 
         assertEquals("A", estabilizador.registrar("A"))
     }
@@ -100,21 +99,146 @@ class EstabilizadorDePrediccionesTest {
     }
 
     @Test
-    fun `con ventana de 1 segundo no confirma si no ha transcurrido el tiempo aunque tenga k frames`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+    fun `fraccionMinima invalida se rechaza al construir con ventana mayor a cero`() {
+        val errorMenorOIgualA05 = runCatching {
+            EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L, fraccionMinima = 0.5f)
+        }.exceptionOrNull()
+        assertEquals(IllegalArgumentException::class, errorMenorOIgualA05!!::class)
 
-        // 3 frames llegan rápido (ej. a los 200 ms)
+        val errorMayorA1 = runCatching {
+            EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L, fraccionMinima = 1.1f)
+        }.exceptionOrNull()
+        assertEquals(IllegalArgumentException::class, errorMayorA1!!::class)
+    }
+
+    @Test
+    fun `ventana temporal - a 999 ms no confirma y a 1000 ms si confirma`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
+
         assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 0L))
-        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 100L))
-        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 200L))
+        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 500L))
+        assertNull(estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 999L))
 
-        // Al cumplirse el segundo (1.000 ms), confirma la seña
-        assertEquals("A", estabilizador.registrar("A", coincidencia = 0.85f, timestampMs = 1_000L))
+        assertEquals("A", estabilizador.registrar("A", coincidencia = 0.8f, timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `ventana temporal - pestillo no vuelve a confirmar mientras se sostiene`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
+
+        estabilizador.registrar("A", timestampMs = 0L)
+        estabilizador.registrar("A", timestampMs = 500L)
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 1_000L))
+
+        // Frames siguientes dentro del mismo sostén
+        assertNull(estabilizador.registrar("A", timestampMs = 1_050L))
+        assertNull(estabilizador.registrar("A", timestampMs = 1_100L))
+    }
+
+    @Test
+    fun `ventana temporal - un frame distinto aislado no reinicia y confirma por mayoria`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L, fraccionMinima = 0.8f)
+
+        // 10 frames de "A" y solo 1 de "B" aislado a los 500 ms (10/11 = 90.9% >= 80%)
+        estabilizador.registrar("A", timestampMs = 0L)
+        estabilizador.registrar("A", timestampMs = 100L)
+        estabilizador.registrar("A", timestampMs = 200L)
+        estabilizador.registrar("A", timestampMs = 300L)
+        estabilizador.registrar("A", timestampMs = 400L)
+        estabilizador.registrar("B", timestampMs = 500L) // ruido aislado
+        estabilizador.registrar("A", timestampMs = 600L)
+        estabilizador.registrar("A", timestampMs = 700L)
+        estabilizador.registrar("A", timestampMs = 800L)
+        estabilizador.registrar("A", timestampMs = 900L)
+
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `ventana temporal - con 25 por ciento de frames distintos no confirma`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 4, ventanaMs = 1_000L, fraccionMinima = 0.8f)
+
+        // 3 frames de "A" y 1 de "B" (3/4 = 75% < 80%)
+        estabilizador.registrar("A", timestampMs = 0L)
+        estabilizador.registrar("A", timestampMs = 300L)
+        estabilizador.registrar("B", timestampMs = 600L)
+
+        assertNull(estabilizador.registrar("A", timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `ventana temporal - borde exacto de 80 por ciento confirma con 4 de 5 y no con 3 de 5`() {
+        val est4de5 = EstabilizadorDePredicciones(k = 5, ventanaMs = 1_000L, fraccionMinima = 0.8f)
+        est4de5.registrar("A", timestampMs = 0L)
+        est4de5.registrar("A", timestampMs = 250L)
+        est4de5.registrar("A", timestampMs = 500L)
+        est4de5.registrar("B", timestampMs = 750L)
+        // 4 de 5 es exactamente 80%
+        assertEquals("A", est4de5.registrar("A", timestampMs = 1_000L))
+
+        val est3de5 = EstabilizadorDePredicciones(k = 5, ventanaMs = 1_000L, fraccionMinima = 0.8f)
+        est3de5.registrar("A", timestampMs = 0L)
+        est3de5.registrar("A", timestampMs = 250L)
+        est3de5.registrar("B", timestampMs = 500L)
+        est3de5.registrar("B", timestampMs = 750L)
+        // 3 de 5 es 60% < 80%
+        assertNull(est3de5.registrar("A", timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `ventana temporal - menos de k muestras no confirma aunque pase un segundo`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 5, ventanaMs = 1_000L)
+
+        // Solo llegan 2 muestras (2 < 5)
+        estabilizador.registrar("A", timestampMs = 0L)
+
+        assertNull(estabilizador.registrar("A", timestampMs = 1_000L))
+    }
+
+    @Test
+    fun `ventana temporal - pausa mayor que la ventana reinicia el temporizador`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
+
+        estabilizador.registrar("A", timestampMs = 0L)
+        estabilizador.registrar("A", timestampMs = 200L)
+
+        // Salto de 1.100 ms (> 1.000 ms) entre frames consecutivos
+        assertNull(estabilizador.registrar("A", timestampMs = 1_300L))
+        // Al reiniciar en 1.300 ms, para confirmar necesita llegar a 2.300 ms
+        assertNull(estabilizador.registrar("A", timestampMs = 1_800L))
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 2_300L))
+    }
+
+    @Test
+    fun `ventana temporal - timestamp que retrocede reinicia el temporizador`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
+
+        estabilizador.registrar("A", timestampMs = 500L)
+        estabilizador.registrar("A", timestampMs = 700L)
+
+        // Timestamp retrocede a 400L
+        assertNull(estabilizador.registrar("A", timestampMs = 400L))
+        assertNull(estabilizador.registrar("A", timestampMs = 900L))
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 1_400L))
+    }
+
+    @Test
+    fun `ventana temporal - reiniciar limpia muestras y pestillo`() {
+        val estabilizador = EstabilizadorDePredicciones(k = 2, ventanaMs = 1_000L)
+
+        estabilizador.registrar("A", timestampMs = 0L)
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 1_000L))
+
+        estabilizador.reiniciar()
+
+        assertEquals(0, estabilizador.avance)
+        assertNull(estabilizador.registrar("A", timestampMs = 2_000L))
+        assertEquals("A", estabilizador.registrar("A", timestampMs = 3_000L))
     }
 
     @Test
     fun `promedia la coincidencia sobre las muestras recientes de la ventana de 1 segundo`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
 
         estabilizador.registrar("A", coincidencia = 0.60f, timestampMs = 0L)
         estabilizador.registrar("A", coincidencia = 0.80f, timestampMs = 200L)
@@ -126,7 +250,7 @@ class EstabilizadorDePrediccionesTest {
 
     @Test
     fun `desecha muestras mas viejas que la ventana de 1 segundo para el promedio`() {
-        val estabilizador = EstabilizadorDePredicciones(k = 3, duracionMinimaMs = 1_000L)
+        val estabilizador = EstabilizadorDePredicciones(k = 3, ventanaMs = 1_000L)
 
         estabilizador.registrar("A", coincidencia = 0.20f, timestampMs = 0L)
         estabilizador.registrar("A", coincidencia = 0.80f, timestampMs = 1_100L)

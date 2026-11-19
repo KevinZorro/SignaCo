@@ -1,12 +1,11 @@
 package com.ufps.signaco.feature.practica.domain
 
 /**
- * Suavizado temporal (RF07): una seña solo se confirma cuando la misma predicción se mantiene
- * durante [k] frames consecutivos y, opcionalmente, durante una ventana temporal mínima
- * [duracionMinimaMs] (por defecto 1 segundo en la práctica real para evitar falsos positivos
- * transitorios mientras se acomoda la mano).
+ * Suavizado temporal (RF07): una seña solo se confirma cuando se mantiene estable durante
+ * una ventana temporal [ventanaMs] (por defecto 1.000 ms) mediante votación por mayoría
+ * (proporción ≥ [fraccionMinima]), o durante [k] frames consecutivos si [ventanaMs] es 0.
  *
- * Además, calcula la [coincidenciaPromedio] de las muestras recientes en una ventana de hasta 1 s
+ * Además, calcula la [coincidenciaPromedio] de las muestras vigentes en la ventana
  * para que el indicador visual en pantalla no parpadee ni salte con picos de frames aislados.
  *
  * Es lógica de negocio y por eso vive en domain, no en el ViewModel ni en la capa de cámara:
@@ -14,18 +13,23 @@ package com.ufps.signaco.feature.practica.domain
  *
  * Tiene estado, así que se crea UNO POR SESIÓN de práctica y no se comparte.
  *
- * Confirma UNA SOLA VEZ por racha: mientras el usuario sostiene la misma pose, [registrar]
- * devuelve la clave en la transición y null después. Sin ese pestillo, a 30 fps se registraría
- * un intento nuevo repetidamente y el progreso del usuario quedaría inflado.
+ * Confirma UNA SOLA VEZ por sostén (pestillo): mientras el usuario sostiene la misma pose,
+ * [registrar] devuelve la clave en la transición y null después.
  */
 class EstabilizadorDePredicciones(
     val k: Int,
-    val duracionMinimaMs: Long = 0L,
+    val ventanaMs: Long = 0L,
+    val fraccionMinima: Float = 0.8f,
 ) {
 
     init {
         require(k >= 1) { "k debe ser al menos 1 y llegó $k" }
-        require(duracionMinimaMs >= 0L) { "duracionMinimaMs no puede ser negativa y llegó $duracionMinimaMs" }
+        require(ventanaMs >= 0L) { "ventanaMs no puede ser negativa y llegó $ventanaMs" }
+        if (ventanaMs > 0L) {
+            require(fraccionMinima > 0.5f && fraccionMinima <= 1.0f) {
+                "fraccionMinima debe estar en (0.5, 1.0] y llegó $fraccionMinima"
+            }
+        }
     }
 
     private data class Muestra(
@@ -36,25 +40,18 @@ class EstabilizadorDePredicciones(
 
     private val muestras = ArrayDeque<Muestra>()
     private var ultimaConfirmada: String? = null
-    private var tiempoInicioRacha: Long? = null
+    private var timestampPrimeraMuestra: Long? = null
+    private var ultimoTimestamp: Long? = null
 
-    /** Frames consecutivos acumulados con la misma predicción, para dibujar el avance. */
+    /** Frames consecutivos acumulados con la misma predicción al final de la ventana. */
     val avance: Int
         get() {
             val ultima = muestras.lastOrNull()?.clave ?: return 0
             return muestras.reversed().takeWhile { it.clave == ultima }.size
         }
 
-    /** Tiempo en ms acumulado sosteniendo la misma predicción en la racha actual. */
-    val duracionRachaMs: Long
-        get() {
-            val inicio = tiempoInicioRacha ?: return 0L
-            val ultimo = muestras.lastOrNull()?.timestampMs ?: return 0L
-            return (ultimo - inicio).coerceAtLeast(0L)
-        }
-
     /**
-     * Promedio de coincidencia de las muestras en la ventana reciente (hasta 1.000 ms o k frames).
+     * Promedio de coincidencia de las muestras vigentes en la ventana.
      * Evita que la barra y el porcentaje de la UI salten con el ruido de un solo frame.
      */
     val coincidenciaPromedio: Float
@@ -74,61 +71,81 @@ class EstabilizadorDePredicciones(
      * @param coincidencia confianza o coincidencia de la seña en este frame.
      * @param timestampMs marca de tiempo del frame.
      * @return la clave recién confirmada, o null si todavía no se cumplen los criterios de
-     *         estabilidad o si esa misma clave ya se había confirmado en esta racha.
+     *         estabilidad o si esa misma clave ya se había confirmado en este sostén.
      */
     fun registrar(
         clave: String,
         coincidencia: Float = 0f,
         timestampMs: Long = 0L,
     ): String? {
-        val ultimaClave = muestras.lastOrNull()?.clave
-
-        if (clave != ultimaClave) {
-            tiempoInicioRacha = timestampMs
-        } else if (tiempoInicioRacha == null) {
-            tiempoInicioRacha = timestampMs
-        }
-
-        muestras.addLast(Muestra(clave, coincidencia, timestampMs))
-
-        // Si se especificó ventana de tiempo, conservamos muestras dentro del rango de 1 s
-        if (duracionMinimaMs > 0L) {
-            val limiteInferior = timestampMs - maxOf(duracionMinimaMs, VENTANA_PROMEDIO_MAX_MS)
-            while (muestras.size > 1 && muestras.first().timestampMs < limiteInferior) {
-                muestras.removeFirst()
-            }
-        } else {
+        if (ventanaMs == 0L) {
+            muestras.addLast(Muestra(clave, coincidencia, timestampMs))
             while (muestras.size > k) {
                 muestras.removeFirst()
             }
+            val estable = muestras.size == k && muestras.all { it.clave == muestras.first().clave }
+            if (!estable) return null
+
+            if (clave == ultimaConfirmada) return null
+            ultimaConfirmada = clave
+            return clave
         }
 
-        // Criterio 1: mínimo k frames consecutivos iguales
-        val framesConsecutivos = avance
-        val tieneSuficientesFrames = framesConsecutivos >= k
+        // Modo ventana temporal con votación por mayoría
+        if (ultimoTimestamp != null) {
+            val salto = timestampMs - ultimoTimestamp!!
+            if (salto > ventanaMs || timestampMs < ultimoTimestamp!!) {
+                reiniciar()
+            }
+        }
 
-        // Criterio 2: si hay duracionMinimaMs, la racha debe durar al menos ese tiempo
-        val tiempoTranscurrido = if (tiempoInicioRacha != null) timestampMs - tiempoInicioRacha!! else 0L
-        val tieneSuficienteTiempo = duracionMinimaMs <= 0L || tiempoTranscurrido >= duracionMinimaMs
+        if (timestampPrimeraMuestra == null) {
+            timestampPrimeraMuestra = timestampMs
+        }
+        ultimoTimestamp = timestampMs
 
-        val estable = tieneSuficientesFrames && tieneSuficienteTiempo
-        if (!estable) return null
+        muestras.addLast(Muestra(clave, coincidencia, timestampMs))
 
-        if (clave == ultimaConfirmada) return null
-        ultimaConfirmada = clave
-        return clave
+        val limiteInferior = timestampMs - ventanaMs
+        while (muestras.isNotEmpty() && muestras.first().timestampMs < limiteInferior) {
+            muestras.removeFirst()
+        }
+
+        val tiempoTranscurrido = timestampMs - (timestampPrimeraMuestra ?: timestampMs)
+        if (tiempoTranscurrido < ventanaMs || muestras.size < k) {
+            return null
+        }
+
+        val conteos = mutableMapOf<String, Int>()
+        for (m in muestras) {
+            conteos[m.clave] = (conteos[m.clave] ?: 0) + 1
+        }
+        val mayoritaria = conteos.maxByOrNull { it.value } ?: return null
+        val fraccion = mayoritaria.value.toFloat() / muestras.size
+
+        if (fraccion < fraccionMinima) {
+            return null
+        }
+
+        val claveGanadora = mayoritaria.key
+        if (claveGanadora == ultimaConfirmada) {
+            return null
+        }
+
+        ultimaConfirmada = claveGanadora
+        return claveGanadora
     }
 
     /** Se llama cuando la mano sale de cuadro o al pasar a otra seña. */
     fun reiniciar() {
         muestras.clear()
         ultimaConfirmada = null
-        tiempoInicioRacha = null
+        timestampPrimeraMuestra = null
+        ultimoTimestamp = null
     }
 
     companion object {
         /** Clave con la que se estabiliza el "no reconocida", que también debe dejar de parpadear. */
         const val CLAVE_NO_RECONOCIDA = "__no_reconocida__"
-        const val VENTANA_PROMEDIO_MAX_MS = 1_000L
     }
 }

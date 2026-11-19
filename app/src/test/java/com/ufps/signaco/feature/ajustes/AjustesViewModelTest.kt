@@ -1,5 +1,6 @@
 package com.ufps.signaco.feature.ajustes
 
+import com.ufps.signaco.core.notificaciones.domain.SincronizarRecordatoriosUseCase
 import com.ufps.signaco.core.preferencias.domain.ManoDominante
 import com.ufps.signaco.core.preferencias.domain.VelocidadDeClips
 import com.ufps.signaco.fakes.FakePreferenciasRepository
@@ -23,10 +24,14 @@ class AjustesViewModelTest {
 
     private val repositorio = FakePreferenciasRepository()
     private val programador = FakeProgramadorDeRecordatorios()
-    private val viewModel = AjustesViewModel(repositorio, programador)
+    private val sincronizarRecordatorios = SincronizarRecordatoriosUseCase(repositorio, programador)
+
+    private fun crearViewModel() = AjustesViewModel(repositorio, sincronizarRecordatorios)
 
     @Test
     fun `activar recordatorios actualiza preferencias y programa recordatorio diario`() = runTest {
+        val viewModel = crearViewModel()
+
         viewModel.cambiarRecordatorios(true)
         advanceUntilIdle()
 
@@ -36,7 +41,9 @@ class AjustesViewModelTest {
 
     @Test
     fun `desactivar recordatorios actualiza preferencias y cancela la alarma`() = runTest {
+        repositorio.cambiarRecordatoriosActivos(true)
         programador.programado = true
+        val viewModel = crearViewModel()
 
         viewModel.cambiarRecordatorios(false)
         advanceUntilIdle()
@@ -47,6 +54,8 @@ class AjustesViewModelTest {
 
     @Test
     fun `cambiar mano dominante actualiza preferencias`() = runTest {
+        val viewModel = crearViewModel()
+
         viewModel.cambiarManoDominante(ManoDominante.IZQUIERDA)
         advanceUntilIdle()
 
@@ -55,6 +64,8 @@ class AjustesViewModelTest {
 
     @Test
     fun `cambiar velocidad de clips actualiza preferencias`() = runTest {
+        val viewModel = crearViewModel()
+
         viewModel.cambiarVelocidadDeClips(VelocidadDeClips.LENTA)
         advanceUntilIdle()
 
@@ -63,6 +74,8 @@ class AjustesViewModelTest {
 
     @Test
     fun `cambiar vibracion actualiza preferencias`() = runTest {
+        val viewModel = crearViewModel()
+
         viewModel.cambiarVibracion(false)
         advanceUntilIdle()
 
@@ -71,6 +84,8 @@ class AjustesViewModelTest {
 
     @Test
     fun `cambiar subtitulos actualiza preferencias`() = runTest {
+        val viewModel = crearViewModel()
+
         viewModel.cambiarSubtitulos(true)
         advanceUntilIdle()
 
