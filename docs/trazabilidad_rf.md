@@ -83,7 +83,7 @@ de notas y la sección 8 del ERS) · ⬜ Pendiente.
 | Cambio | RF / RNF | Componentes principales | Notas |
 |---|---|---|---|
 | Ventana de 1 segundo y votación por mayoría | RF07 | `EstabilizadorDePredicciones.kt`, `CrearEstabilizadorUseCase.kt`, `ProcesarFrameUseCase.kt` | Votación por mayoría (≥ 80 %) y coincidencia promediada en 1.000 ms. La ventana también afecta al quiz con cámara. RNF01 (< 2 s) sigue por medir en el teléfono de referencia. |
-| Recordatorios diarios locales | Pedido del equipo; respeta RNF06–RNF08 | `core/notificaciones/`, `AjustesScreen.kt`, `AjustesViewModel.kt`, `AndroidManifest.xml` | Alarma inexacta diaria (~6 p.m.), sin red/INTERNET, rotación determinista de mensajes por día. La matriz no tiene ningún RF de recordatorios (no citar RF21). |
+| Recordatorios diarios locales | Pedido del equipo; respeta RNF06–RNF08 | `core/notificaciones/`, `AjustesScreen.kt`, `AjustesViewModel.kt`, `AndroidManifest.xml` | Alarma inexacta diaria (~6 p.m.), sin red/INTERNET, rotación determinista de mensajes por día. Ningún RF de esta matriz cubre los recordatorios. |
 | QA de recordatorios y estabilidad | RNF19 | `EstabilizadorDePrediccionesTest`, `ProcesarFrameUseCaseTest`, `CrearEstabilizadorUseCaseTest`, `EvaluarEnvioDeRecordatorioUseCaseTest`, `SincronizarRecordatoriosUseCaseTest`, `AjustesViewModelTest` | Cobertura de casos borde (ruido aislado, 25 %, 999 vs 1000 ms, pestillo, reinicio, rotación de mensajes, timestamps y sincronización). |
 
 ## Cambios de la rama `Anyela_Cambios`
