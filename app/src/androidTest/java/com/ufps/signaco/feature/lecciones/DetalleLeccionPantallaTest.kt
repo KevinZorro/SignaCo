@@ -1,9 +1,12 @@
 package com.ufps.signaco.feature.lecciones
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -68,7 +71,12 @@ class DetalleLeccionPantallaTest {
         }
 
         compose.waitUntil(TIEMPO_MS) { viewModel.uiState.value.leccion != null }
+        // La lista es un LazyColumn y el emulador de CI no tiene perfil de hardware: su pantalla
+        // es de 320×640, la fila de la «U» queda bajo el pliegue y un LazyColumn no compone las
+        // filas que quedan fuera. assertIsDisplayed() da «no mostrado» tanto para un nodo fuera
+        // de pantalla como para uno que no existe, así que se llega a cada letra con scroll.
         listOf("A", "I", "O", "U").forEach { letra ->
+            compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Letra $letra"))
             compose.onNodeWithText("Letra $letra").assertIsDisplayed()
         }
         compose.onNodeWithText(contexto.getString(R.string.detalle_empezar_practica)).performClick()
