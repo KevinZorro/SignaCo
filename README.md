@@ -125,11 +125,12 @@ El modelo no se reentrena ni se modifica: el filtrado es de la app y vive en `Vo
 que es además la fuente de la que `CatalogoInicial` deriva el `disponible` de cada seña, para que
 el catálogo y el clasificador no puedan separarse.
 
-**Las probabilidades no se renormalizan sobre las 19 activas.** Los umbrales de
-`config_rechazo.json` están calibrados contra la distribución cruda de 28 clases; renormalizar
-dividiría por una suma menor que 1, inflaría las confianzas y aflojaría los umbrales en silencio.
-Se hace `argmax` restringido a las activas y se compara la probabilidad cruda. Además, la clase
-de rechazo manda sobre todo lo demás.
+**Regla de decisión del modelo T-08.** Desde que la app usa `signaco_mlp_t08.tflite`, el
+clasificador aplica la misma regla con la que se midió el modelo: `argmax` sobre las 28 clases,
+si gana la clase de rechazo se rechaza y, si no, se acepta solo cuando la probabilidad cruda
+alcanza el umbral de esa letra. Ya no restringe el `argmax` a las 19 activas: qué letras se
+enseñan lo decide el catálogo (`VocabularioActivo`), y así el deletreo (`feature/deletreo`) puede
+ver C, E, K, M y N, que la práctica no enseña todavía.
 
 ### Modo de depuración
 

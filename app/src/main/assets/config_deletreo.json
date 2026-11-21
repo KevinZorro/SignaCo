@@ -1,0 +1,12 @@
+{
+  "sostener_ms": 400,
+  "minimo_de_frames": 3,
+  "soltar_ms": 200,
+  "pausa_de_palabra_ms": 1500,
+  "maximo_de_letras": 20,
+  "letras_excluidas": ["G", "H", "J", "S", "Z", "NN"],
+  "costo_minimo_de_sustitucion": 0.35,
+  "costo_maximo_por_longitud": {"1": 0.0, "2": 0.0, "3": 1.0, "4": 1.0, "5": 1.0, "6": 1.5, "7": 1.5, "default": 2.0},
+  "margen_de_ambiguedad": 0.25,
+  "maximo_de_candidatas": 3
+}

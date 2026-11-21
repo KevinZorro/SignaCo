@@ -67,10 +67,10 @@ Cambiar entre ellas es **una línea en el módulo de Hilt**. Esto es el RNF-21 d
 
 No hay que entrenarlo ni modificarlo. Estado:
 
-- `signaco_abecedario_rechazo.tflite` — 59 KB, 28 clases (27 letras + `no_es_seña`)
+- `signaco_mlp_t08.tflite` — 193 KB, float32 sin cuantizar, 28 clases (27 letras + `none`), umbral por letra en `config_rechazo.json` (reemplazó al de 59 KB, decisión de Kevin, 2026-11-21)
 - `config_rechazo.json` — etiquetas, umbrales, parámetro `k` de estabilidad temporal
 - `hand_landmarker.task` — 7.46 MB, detector de MediaPipe
-- Total desplegado: 7.52 MB de los 20 MB que permite RNF-03
+- Total desplegado: ~7.65 MB de los 20 MB que permite RNF-03
 
 Exactitud: 88.8 % por seña, con evaluación persona-independiente.
 
