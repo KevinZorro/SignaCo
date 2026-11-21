@@ -25,7 +25,7 @@ de notas y la sección 8 del ERS) · ⬜ Pendiente.
 | RF04 | Must | ✅ | `feature/practica/presentation/camara/` | Manual en dispositivo | Cámara frontal y trasera, permiso con explicación y reintento. |
 | RF05 | Must | ✅ | `feature/practica/data/camara/AnalizadorDeManosMediaPipe.kt` | `NormalizadorDeLandmarksTest` | No se guarda video: 63 floats por frame. |
 | RF06 | Must | ✅ | `core/reconocimiento/data/TFLiteSignClassifier.kt` | `VocabularioActivoTest`, `FakeSignClassifierTest` | 19 letras activas de 28 clases. |
-| RF07 | Must | ✅ | `feature/practica/domain/EstabilizadorDePredicciones.kt` | `EstabilizadorDePrediccionesTest` | `k` en `config_rechazo.json`. |
+| RF07 | Must | ✅ | `feature/practica/domain/EstabilizadorDePredicciones.kt`, `CrearEstabilizadorUseCase.kt` | `EstabilizadorDePrediccionesTest`, `ProcesarFrameUseCaseTest`, `CrearEstabilizadorUseCaseTest` | `k`, `ventanaMs` (1.000 ms) y `fraccionMinima` (0.8) en configuración; votación por mayoría y coincidencia promediada. La ventana también afecta al quiz con cámara. RNF01 (< 2 s) sigue por medir en el teléfono de referencia. |
 | RF08 | Must | ⚠️ | `core/reconocimiento/`, `config_rechazo.json` | `ObtenerUmbralDeSenaUseCaseTest` | Umbral por letra en `config_rechazo.json`, no un 0.75 único. |
 | RF09 | Must | ✅ | `practica/presentation/camara/VisorDeCamara.kt` (píldora) | `PracticaCuentaRegresivaTest` | Buscando manos / reconociendo / sin detección, con texto. |
 | RF10 | Must | ✅ | `VisorDeCamara.kt` (`ControlDeCaptura`), `PracticaViewModel` | `PracticaCuentaRegresivaTest` | El intento empieza solo tras una cuenta de 3 s. El mismo control cancela la cuenta, y «Iniciar intento» / «Detener» quedan de respaldo. |
@@ -77,6 +77,14 @@ de notas y la sección 8 del ERS) · ⬜ Pendiente.
 | RNF13 | Errores de cámara y de modelo con reintento en la práctica y en el quiz con cámara. |
 | RNF19 | Cobertura de domain medida con `./gradlew coberturaDomain -Pcobertura`: 93,0 % de líneas al inicio y 93,8 % al final. |
 | RD06 / RD05 | `docs/fuentes_senas.md`: autoría de las imágenes. Pendientes: la fuente de LSC de cada seña y el consentimiento. |
+
+## Cambios de la rama `feat/recordatorios-y-promedio-senas`
+
+| Cambio | RF / RNF | Componentes principales | Notas |
+|---|---|---|---|
+| Ventana de 1 segundo y votación por mayoría | RF07 | `EstabilizadorDePredicciones.kt`, `CrearEstabilizadorUseCase.kt`, `ProcesarFrameUseCase.kt` | Votación por mayoría (≥ 80 %) y coincidencia promediada en 1.000 ms. La ventana también afecta al quiz con cámara. RNF01 (< 2 s) sigue por medir en el teléfono de referencia. |
+| Recordatorios diarios locales | Pedido del equipo; respeta RNF06–RNF08 | `core/notificaciones/`, `AjustesScreen.kt`, `AjustesViewModel.kt`, `AndroidManifest.xml` | Alarma inexacta diaria (~6 p.m.), sin red/INTERNET, rotación determinista de mensajes por día. Ningún RF de esta matriz cubre los recordatorios. |
+| QA de recordatorios y estabilidad | RNF19 | `EstabilizadorDePrediccionesTest`, `ProcesarFrameUseCaseTest`, `CrearEstabilizadorUseCaseTest`, `EvaluarEnvioDeRecordatorioUseCaseTest`, `SincronizarRecordatoriosUseCaseTest`, `AjustesViewModelTest` | Cobertura de casos borde (ruido aislado, 25 %, 999 vs 1000 ms, pestillo, reinicio, rotación de mensajes, timestamps y sincronización). |
 
 ## Cambios de la rama `Anyela_Cambios`
 

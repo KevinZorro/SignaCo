@@ -252,4 +252,18 @@ La cámara viene en el siguiente paso.</string>
         <item quantity="one">%1$d día</item>
         <item quantity="other">%1$d días</item>
     </plurals>
+    <!-- Recordatorios de práctica (Notificaciones locales) -->
+    <string name="ajustes_recordatorios">Recordatorios</string>
+    <string name="ajustes_recordatorios_titulo">Recordatorio diario de práctica</string>
+    <string name="ajustes_recordatorios_descripcion">Recibe un recordatorio cada tarde (alrededor de las 6 p.m.) para practicar tus señas.</string>
+    <string name="ajustes_recordatorios_permiso_denegado">Se necesita permiso de notificaciones para los recordatorios.</string>
+    <string name="ajustes_recordatorios_abrir_ajustes">Abrir ajustes</string>
+    <string name="notificacion_canal_nombre">Recordatorios de práctica</string>
+    <string name="notificacion_canal_descripcion">Avisos diarios para practicar y mantener tu racha en SignaCO.</string>
+    <string name="recordatorio_mensaje_1">¿Tienes 3 minutos libres? Recuerda practicar tus señas de hoy.</string>
+    <string name="recordatorio_mensaje_2">Mantén tu racha activa: practica una lección de LSC en SignaCO.</string>
+    <string name="recordatorio_mensaje_3">Un repaso rápido marca la diferencia. ¡Es hora de practicar señas!</string>
+    <string name="recordatorio_mensaje_4">Aprender señas es constancia. Dedica un momento a tus señas de hoy.</string>
+    <string name="recordatorio_mensaje_5">¡Hora de practicar! Entra a SignaCO y refuerza tu abecedario de señas.</string>
+
 </resources>

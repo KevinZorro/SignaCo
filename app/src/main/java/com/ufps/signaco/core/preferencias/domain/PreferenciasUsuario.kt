@@ -22,6 +22,7 @@ data class PreferenciasUsuario(
     val altoContraste: Boolean = false,
     val reducirAnimaciones: Boolean = false,
     val primerUsoCompletado: Boolean = false,
+    val recordatoriosActivos: Boolean = false,
 )
 
 enum class ManoDominante { DERECHA, IZQUIERDA }

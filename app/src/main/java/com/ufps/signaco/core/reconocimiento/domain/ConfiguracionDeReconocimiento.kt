@@ -15,6 +15,8 @@ data class ConfiguracionDeReconocimiento(
     val k: Int,
     /** De dónde salió esta configuración, para poder decirlo en el log. */
     val procedencia: String = "desconocida",
+    val ventanaMs: Long = VENTANA_MS_POR_DEFECTO,
+    val fraccionMinima: Float = FRACCION_MINIMA_POR_DEFECTO,
 ) {
     val totalDeClases: Int get() = maxOf(etiquetas.size, indiceDeRechazo + 1)
 
@@ -33,6 +35,8 @@ data class ConfiguracionDeReconocimiento(
     companion object {
         const val K_POR_DEFECTO = 3
         const val UMBRAL_POR_DEFECTO = 0.1f
+        const val VENTANA_MS_POR_DEFECTO = 1000L
+        const val FRACCION_MINIMA_POR_DEFECTO = 0.8f
 
         /** Solo si la lectura del JSON falla. El log deja constancia cuando se usa. */
         val RESPALDO = ConfiguracionDeReconocimiento(
@@ -42,6 +46,8 @@ data class ConfiguracionDeReconocimiento(
             umbralGlobal = UMBRAL_POR_DEFECTO,
             k = K_POR_DEFECTO,
             procedencia = "RESPALDO EN CÓDIGO",
+            ventanaMs = VENTANA_MS_POR_DEFECTO,
+            fraccionMinima = FRACCION_MINIMA_POR_DEFECTO,
         )
     }
 }

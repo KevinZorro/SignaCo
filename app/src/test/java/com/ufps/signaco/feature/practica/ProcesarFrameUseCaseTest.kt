@@ -148,4 +148,39 @@ class ProcesarFrameUseCaseTest {
 
         assertEquals(0.3f, (resultado as ResultadoDeFrame.NoReconocidaEstable).coincidencia, 0.0001f)
     }
+
+    @Test
+    fun `promedia la coincidencia mostrada en los frames sucesivos`() = runTest {
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.40f)
+        caso("A", frameConMano, estabilizador)
+
+        clasificador.siguienteResultado = ResultadoClasificacion.SenaNoReconocida("A", confianza = 0.60f)
+        val segundo = caso("A", frameConMano, estabilizador)
+
+        // Promedio de 0.40 y 0.60 es 0.50
+        assertEquals(0.50f, (segundo as ResultadoDeFrame.Buscando).coincidencia, 0.0001f)
+    }
+
+    @Test
+    fun `con ventana temporal de 1000 ms y frames cada 33 ms con timestamps explicitos confirma al alcanzar la ventana`() = runTest {
+        val estabilizadorVentana = EstabilizadorDePredicciones(k = 3, ventanaMs = 1000L, fraccionMinima = 0.8f)
+        clasificador.siguienteResultado = ResultadoClasificacion.LetraReconocida("A", 0.90f)
+
+        // Frames cada 33 ms desde t = 0L hasta t = 990L (31 frames de 0 a 990 ms, delta = 990 ms < 1000 ms)
+        for (i in 0..30) {
+            val t = i * 33L
+            val frame = FrameDeLandmarks(FloatArray(NormalizadorDeLandmarks.VALORES), timestampMs = t)
+            val res = caso("A", frame, estabilizadorVentana)
+            assertTrue("En t=$t ms no debió confirmar aún", res is ResultadoDeFrame.Buscando)
+            assertEquals(0.90f, (res as ResultadoDeFrame.Buscando).coincidencia, 0.001f)
+        }
+        assertTrue(progreso.intentosRegistrados.isEmpty())
+
+        // Frame en t = 1023 ms (tiempo transcurrido 1023 ms >= 1000 ms y > 80% frames son "A")
+        val frameConfirmado = FrameDeLandmarks(FloatArray(NormalizadorDeLandmarks.VALORES), timestampMs = 1023L)
+        val resConfirmado = caso("A", frameConfirmado, estabilizadorVentana)
+
+        assertTrue(resConfirmado is ResultadoDeFrame.Confirmado)
+        assertEquals(listOf("A" to true), progreso.intentosRegistrados)
+    }
 }
