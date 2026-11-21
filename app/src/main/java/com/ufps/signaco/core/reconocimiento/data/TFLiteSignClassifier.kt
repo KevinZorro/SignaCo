@@ -8,7 +8,6 @@ import com.ufps.signaco.core.reconocimiento.domain.NormalizadorDeLandmarks
 import com.ufps.signaco.core.reconocimiento.domain.ProveedorDeConfiguracion
 import com.ufps.signaco.core.reconocimiento.domain.ResultadoClasificacion
 import com.ufps.signaco.core.reconocimiento.domain.SignClassifier
-import com.ufps.signaco.core.reconocimiento.domain.VocabularioActivo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
@@ -33,11 +32,10 @@ import javax.inject.Singleton
  * ENTRADA: los 63 floats YA NORMALIZADOS por [NormalizadorDeLandmarks]. Un arreglo de otro
  * tamaño se interpreta como que no hay mano.
  *
- * FILTRADO DE VOCABULARIO: el modelo da 28 clases pero la app solo enseña 19 letras. Las
- * probabilidades NO se renormalizan sobre las activas: los umbrales de config_rechazo.json están
- * calibrados contra la distribución cruda de 28 clases, y renormalizar dividiría por una suma
- * menor que 1, inflando las confianzas y aflojando los umbrales en silencio. Se hace argmax
- * restringido a las activas y se compara la probabilidad cruda.
+ * REGLA DE DECISIÓN (modelo T-08, contrato v1): ganador = argmax sobre las 28 clases; si es la
+ * clase de rechazo se rechaza; si no, se acepta solo si su probabilidad CRUDA alcanza el umbral de
+ * esa letra. Es la misma regla con la que se midió el modelo; no se filtra por vocabulario aquí
+ * (qué letras se enseñan lo decide el catálogo), así el deletreo puede ver C, E, K, M, N.
  */
 @Singleton
 class TFLiteSignClassifier @Inject constructor(
@@ -51,7 +49,6 @@ class TFLiteSignClassifier @Inject constructor(
 
     private var interprete: Interpreter? = null
     private var configuracion: ConfiguracionDeReconocimiento? = null
-    private var indicesActivos: IntArray = IntArray(0)
 
     override suspend fun clasificar(landmarks: FloatArray): ResultadoClasificacion =
         withContext(dispatcher) {
@@ -76,35 +73,28 @@ class TFLiteSignClassifier @Inject constructor(
         configuracion: ConfiguracionDeReconocimiento,
         milisegundos: Long,
     ): ResultadoClasificacion {
-        val ganadorGlobal = indiceMayorEn(probabilidades, probabilidades.indices.toList())
-
-        // El mejor candidato entre las 19 activas, con su probabilidad CRUDA.
-        val elegido = indiceMayorEn(probabilidades, indicesActivos.toList())
-        val letra = configuracion.letraEn(elegido)
-        val confianza = probabilidades.getOrElse(elegido) { 0f }
+        val elegido = indiceMayorEn(probabilidades, probabilidades.indices.toList())
+        val ganoElRechazo = elegido == configuracion.indiceDeRechazo
+        // Si gana el rechazo no hay letra: se informa la mejor letra y su probabilidad cruda solo
+        // para la barra de coincidencia en vivo.
+        val mejorLetra = indiceMayorEn(probabilidades, configuracion.etiquetas.indices.toList())
+        val indiceDeLetra = if (ganoElRechazo) mejorLetra else elegido
+        val letra = configuracion.letraEn(indiceDeLetra)
+        val confianza = probabilidades.getOrElse(indiceDeLetra) { 0f }
         val umbral = letra?.let { configuracion.umbralDe(it) } ?: configuracion.umbralGlobal
-
-        // 1. La clase de rechazo manda sobre todo lo demás.
-        val ganoElRechazo = ganadorGlobal == configuracion.indiceDeRechazo
-        // 2. Modo estricto opcional: si gana una letra excluida, rechazar en vez de caer a la
-        //    mejor activa. Ver la nota de MODO_ESTRICTO.
-        val ganoUnaExcluida = !ganoElRechazo &&
-            configuracion.letraEn(ganadorGlobal)?.let { !VocabularioActivo.estaActiva(it) } == true
-        // 3. Umbral crudo de la letra elegida.
-        val pasaElUmbral = letra != null && confianza >= umbral
+        val pasaElUmbral = confianza >= umbral
 
         val resultado = when {
-            ganoElRechazo -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
-            ganoUnaExcluida && MODO_ESTRICTO -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
-            !pasaElUmbral -> ResultadoClasificacion.SenaNoReconocida(letra, confianza)
+            ganoElRechazo || letra == null || !pasaElUmbral ->
+                ResultadoClasificacion.SenaNoReconocida(letra, confianza)
             else -> ResultadoClasificacion.LetraReconocida(letra, confianza)
         }
 
         registro.registrarFrame(
             landmarks = landmarks,
             probabilidades = probabilidades,
-            indiceGanadorGlobal = ganadorGlobal,
-            indiceElegido = elegido,
+            indiceGanadorGlobal = elegido,
+            indiceElegido = indiceDeLetra,
             letraElegida = letra,
             confianza = confianza,
             umbral = umbral,
@@ -146,7 +136,6 @@ class TFLiteSignClassifier @Inject constructor(
 
             val config = configYaLeida ?: proveedorDeConfiguracion.obtener().also {
                 configuracion = it
-                indicesActivos = VocabularioActivo.indicesActivosEn(it.etiquetas)
             }
             val nuevo = crearInterprete()
             interprete = nuevo
@@ -189,20 +178,6 @@ class TFLiteSignClassifier @Inject constructor(
     }
 
     private companion object {
-        const val MODELO = "signaco_abecedario_rechazo.tflite"
-
-        /**
-         * Qué hacer cuando el ganador global es una letra EXCLUIDA (no la clase de rechazo).
-         *
-         * false (permisivo, por defecto): se ignora y se toma la mejor activa. Es lo razonable
-         * porque las exclusiones existen precisamente porque las activas se fugan hacia ellas
-         * (A, S y T hacia M, N, E en la familia de puño cerrado); rechazar por eso tiraría
-         * intentos legítimos. La guarda contra aceptar una seña ajena es el umbral.
-         *
-         * true (estricto): si gana una excluida, se rechaza. Menos falsos aciertos, más falsos
-         * rechazos. Conviene probarlo en dispositivo con el log de depuración, porque algunos
-         * umbrales del config son de 0.02 y filtran poco.
-         */
-        const val MODO_ESTRICTO = false
+        const val MODELO = "signaco_mlp_t08.tflite"
     }
 }

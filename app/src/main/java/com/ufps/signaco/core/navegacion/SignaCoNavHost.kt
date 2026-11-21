@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.ufps.signaco.feature.ajustes.presentation.AjustesScreen
+import com.ufps.signaco.feature.deletreo.presentation.DeletreoScreen
 import com.ufps.signaco.feature.ajustes.presentation.TamanoYContrasteScreen
 import com.ufps.signaco.feature.diccionario.presentation.DiccionarioScreen
 import com.ufps.signaco.feature.diccionario.presentation.teoria.TeoriaSenaScreen
@@ -76,7 +77,12 @@ fun SignaCoNavHost(
             AjustesScreen(
                 onVolver = { navController.navigateUp() },
                 onAbrirTamanoYContraste = { navController.navigate(Rutas.TamanoYContraste) },
+                onAbrirDeletreo = { navController.navigate(Rutas.Deletreo) },
             )
+        }
+
+        composable<Rutas.Deletreo> {
+            DeletreoScreen(onVolver = { navController.navigateUp() })
         }
 
         composable<Rutas.TamanoYContraste> {
