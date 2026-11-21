@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +45,7 @@ fun DeletreoScreen(
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val solicitarPermiso = rememberSolicitudDePermisoDeCamara(viewModel::alResponderElPermiso)
     val descripcionDeLaCamara = stringResource(R.string.cd_vista_previa_deletreo)
+    val pista = stringResource(R.string.deletreo_pista)
 
     Scaffold(
         modifier = modifier,
@@ -96,7 +98,7 @@ fun DeletreoScreen(
                         )
                     }
                     Text(
-                        text = estado.letrasEnCurso.ifEmpty { stringResource(R.string.deletreo_pista) },
+                        text = estado.letrasEnCurso.ifEmpty { pista },
                         style = MaterialTheme.typography.headlineMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
