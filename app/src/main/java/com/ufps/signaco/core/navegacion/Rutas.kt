@@ -27,6 +27,9 @@ object Rutas {
     data object TamanoYContraste
 
     @Serializable
+    data object Deletreo
+
+    @Serializable
     data class DetalleLeccion(val leccionId: String)
 
     /**
