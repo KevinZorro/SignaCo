@@ -19,7 +19,19 @@ data class DeletreoUiState(
     val palabras: List<PalabraDeletreada> = emptyList(),
     /** Lo que se sostiene ahora (letra o gesto) y cuánto falta, para el indicador. */
     val sostenido: ProgresoDeSostenido = ProgresoDeSostenido(null, 0f),
+    /** Mientras dura el confeti de "Terminar palabra" la frase sigue a la vista y no se captura. */
+    val celebrando: Boolean = false,
 ) {
+    /** "Terminar palabra" solo hace algo si hay algo escrito y no está celebrando ya. */
+    val puedeTerminar: Boolean get() = frase.isNotEmpty() && !celebrando
+
+    /** Arranca la celebración; sin nada escrito no hay nada que celebrar. */
+    fun celebrar(): DeletreoUiState = if (puedeTerminar) copy(celebrando = true, sostenido = ProgresoDeSostenido(null, 0f)) else this
+
+    /** Deja lo escrito en blanco, conservando permiso, carga, error y captura. */
+    fun limpio(): DeletreoUiState =
+        copy(letrasEnCurso = "", palabras = emptyList(), sostenido = ProgresoDeSostenido(null, 0f), celebrando = false)
+
     /**
      * Lo que el usuario lleva escrito: las palabras ya terminadas (la sugerida de la lista, o las
      * letras tal cual si nada coincidió) y, a continuación, las letras en curso. Así la palabra

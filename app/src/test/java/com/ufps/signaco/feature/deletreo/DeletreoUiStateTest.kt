@@ -29,4 +29,31 @@ class DeletreoUiStateTest {
         val s = DeletreoUiState(palabras = listOf(palabra("X U Q", null)))
         assertEquals("XUQ", s.frase)
     }
+
+    @Test fun `terminar palabra celebra solo si hay algo escrito`() {
+        assertEquals(false, DeletreoUiState().celebrar().celebrando)
+        assertEquals(false, DeletreoUiState().puedeTerminar)
+        val s = DeletreoUiState(palabras = listOf(palabra("M A M A", "MAMA")))
+        assertEquals(true, s.puedeTerminar)
+        assertEquals(true, s.celebrar().celebrando)
+    }
+
+    @Test fun `durante la celebracion la frase sigue a la vista y no se puede terminar de nuevo`() {
+        val s = DeletreoUiState(palabras = listOf(palabra("M A M A", "MAMA"))).celebrar()
+        assertEquals("MAMA", s.frase)
+        assertEquals(false, s.puedeTerminar)
+    }
+
+    @Test fun `al acabar el confeti se borra lo deletreado y se conserva el resto`() {
+        val s = DeletreoUiState(
+            permisoConcedido = true,
+            cargando = false,
+            palabras = listOf(palabra("M A M A", "MAMA")),
+            letrasEnCurso = "P A",
+        ).celebrar().limpio()
+        assertEquals("", s.frase)
+        assertEquals(false, s.celebrando)
+        assertEquals(true, s.permisoConcedido)
+        assertEquals(false, s.cargando)
+    }
 }
