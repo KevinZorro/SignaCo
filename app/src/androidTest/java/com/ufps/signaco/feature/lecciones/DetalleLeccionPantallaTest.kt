@@ -1,9 +1,12 @@
 package com.ufps.signaco.feature.lecciones
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -69,6 +72,9 @@ class DetalleLeccionPantallaTest {
 
         compose.waitUntil(TIEMPO_MS) { viewModel.uiState.value.leccion != null }
         listOf("A", "I", "O", "U").forEach { letra ->
+            // La lista es perezosa y con las imágenes de referencia la última letra queda
+            // fuera de la pantalla del emulador: hay que desplazarse hasta ella antes de afirmar.
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText("Letra $letra"))
             compose.onNodeWithText("Letra $letra").assertIsDisplayed()
         }
         compose.onNodeWithText(contexto.getString(R.string.detalle_empezar_practica)).performClick()
