@@ -23,7 +23,9 @@ android {
         applicationId = "com.ufps.signaco"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
+        // CI pasa -PciVersionCode=<n.º de ejecución> para que cada APK distribuido sea instalable
+        // encima del anterior; en local queda el valor fijo.
+        versionCode = (findProperty("ciVersionCode") as String?)?.toIntOrNull() ?: 2
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
