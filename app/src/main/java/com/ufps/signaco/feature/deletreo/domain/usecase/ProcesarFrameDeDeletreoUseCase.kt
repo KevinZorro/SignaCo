@@ -11,6 +11,7 @@ import javax.inject.Inject
 /**
  * Lleva un frame de la cámara al motor de deletreo: clasifica (el umbral ya lo aplica el
  * clasificador) y traduce el resultado a uno de los tres estados que el motor entiende.
+ * Antes de clasificar mira si la mano forma un gesto (borrar, espacio).
  * A diferencia de la práctica, aquí NO hay seña objetivo ni pestillo por mano.
  */
 class ProcesarFrameDeDeletreoUseCase @Inject constructor(
@@ -19,6 +20,8 @@ class ProcesarFrameDeDeletreoUseCase @Inject constructor(
     suspend operator fun invoke(frame: FrameDeLandmarks, motor: MotorDeDeletreo): List<EventoDeDeletreo> {
         val t = frame.timestampMs
         if (!frame.hayMano) return motor.registrar(FrameDeDeletreo.SinMano(t))
+        // Los gestos van antes que el clasificador: ninguna letra tiene esas formas.
+        motor.gestoDe(frame.landmarks)?.let { return motor.registrar(FrameDeDeletreo.Letra(t, it, 1f)) }
         val entrada = when (val r = clasificador.clasificar(frame.landmarks)) {
             is ResultadoClasificacion.LetraReconocida -> FrameDeDeletreo.Letra(t, r.letra, r.confianza)
             is ResultadoClasificacion.SenaNoReconocida -> FrameDeDeletreo.Rechazada(t)

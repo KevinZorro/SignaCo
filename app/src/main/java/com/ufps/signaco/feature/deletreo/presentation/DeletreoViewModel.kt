@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ufps.signaco.feature.deletreo.domain.EventoDeDeletreo
 import com.ufps.signaco.feature.deletreo.domain.MotorDeDeletreo
+import com.ufps.signaco.feature.deletreo.domain.ProgresoDeSostenido
 import com.ufps.signaco.feature.deletreo.domain.usecase.CrearMotorDeDeletreoUseCase
 import com.ufps.signaco.feature.deletreo.domain.usecase.ProcesarFrameDeDeletreoUseCase
 import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
@@ -31,6 +32,8 @@ data class DeletreoUiState(
     val capturando: Boolean = true,
     val letrasEnCurso: String = "",
     val palabras: List<PalabraDeletreada> = emptyList(),
+    /** Lo que se sostiene ahora (letra o gesto) y cuánto falta, para el indicador. */
+    val sostenido: ProgresoDeSostenido = ProgresoDeSostenido(null, 0f),
 )
 
 /**
@@ -94,10 +97,15 @@ class DeletreoViewModel @Inject constructor(
     }
 
     private fun aplicar(eventos: List<EventoDeDeletreo>, motor: MotorDeDeletreo) {
-        if (eventos.isEmpty()) return
+        val sostenido = motor.progreso
+        if (eventos.isEmpty()) {
+            _uiState.update { it.copy(sostenido = sostenido) }
+            return
+        }
         _uiState.update { estado ->
             var palabras = estado.palabras
             for (e in eventos) {
+                if (e is EventoDeDeletreo.BorrarPalabraSolicitado) palabras = palabras.dropLast(1)
                 if (e is EventoDeDeletreo.PalabraTerminada) {
                     val r = e.resultado
                     palabras = palabras + PalabraDeletreada(
@@ -111,6 +119,7 @@ class DeletreoViewModel @Inject constructor(
             estado.copy(
                 letrasEnCurso = motor.letrasActuales.joinToString(" ") { if (it == "NN") "Ñ" else it },
                 palabras = palabras,
+                sostenido = sostenido,
             )
         }
     }

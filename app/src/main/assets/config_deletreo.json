@@ -1,12 +1,15 @@
 {
-  "sostener_ms": 400,
+  "sostener_ms": 1000,
   "minimo_de_frames": 3,
   "soltar_ms": 200,
+  "guarda_de_entrada_ms": 300,
   "pausa_de_palabra_ms": 1500,
   "maximo_de_letras": 20,
   "letras_excluidas": ["G", "H", "J", "S", "Z", "NN"],
   "costo_minimo_de_sustitucion": 0.35,
+  "costo_de_borrar_en_el_borde": 0.4,
   "costo_maximo_por_longitud": {"1": 0.0, "2": 0.0, "3": 1.0, "4": 1.0, "5": 1.0, "6": 1.5, "7": 1.5, "default": 2.0},
   "margen_de_ambiguedad": 0.25,
-  "maximo_de_candidatas": 3
+  "maximo_de_candidatas": 3,
+  "gestos": {"extendido_min": 1.2, "doblado_max": 1.0, "apertura_min": 0.25, "pulgar_afuera_min": 1.0}
 }

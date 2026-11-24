@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import com.ufps.signaco.core.ui.componentes.BarraSuperior
 import com.ufps.signaco.core.ui.componentes.BotonPrincipal
 import com.ufps.signaco.core.ui.componentes.BotonTonal
 import com.ufps.signaco.core.ui.componentes.Navegacion
+import com.ufps.signaco.feature.deletreo.domain.Gestos
 import com.ufps.signaco.feature.practica.presentation.camara.VistaPreviaDeCamara
 import com.ufps.signaco.feature.practica.presentation.camara.rememberSolicitudDePermisoDeCamara
 
@@ -98,8 +100,24 @@ fun DeletreoScreen(
                         )
                     }
                     Text(
-                        text = estado.letrasEnCurso.ifEmpty { pista },
+                        text = estado.letrasEnCurso.ifEmpty { "…" },
                         style = MaterialTheme.typography.headlineMedium,
+                    )
+                    Text(text = pista, style = MaterialTheme.typography.bodyMedium)
+                    val etiquetaSostenida = when (val e = estado.sostenido.etiqueta) {
+                        null -> ""
+                        Gestos.BORRAR -> stringResource(R.string.deletreo_gesto_borrar)
+                        Gestos.ESPACIO -> stringResource(R.string.deletreo_gesto_espacio)
+                        "NN" -> "Ñ"
+                        else -> e
+                    }
+                    Text(
+                        text = etiquetaSostenida,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    LinearProgressIndicator(
+                        progress = { estado.sostenido.fraccion },
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         BotonPrincipal(
