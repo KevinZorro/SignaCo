@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ufps.signaco.R
+import com.ufps.signaco.core.ui.componentes.FilaDeNavegacion
 import com.ufps.signaco.core.senas.domain.model.Categoria
 import com.ufps.signaco.core.senas.domain.model.Sena
 import com.ufps.signaco.core.ui.componentes.EstadoDeCarga
@@ -52,6 +53,7 @@ import com.ufps.signaco.feature.progreso.domain.model.ProgresoSena
 fun CatalogoLeccionesScreen(
     onLeccionSeleccionada: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onAbrirDeletreo: (() -> Unit)? = null,
     viewModel: CatalogoLeccionesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,6 +61,7 @@ fun CatalogoLeccionesScreen(
         uiState = uiState,
         onLeccionSeleccionada = onLeccionSeleccionada,
         onReintentar = viewModel::reintentar,
+        onAbrirDeletreo = onAbrirDeletreo,
         modifier = modifier,
     )
 }
@@ -73,6 +76,7 @@ fun CatalogoLeccionesContenido(
     onLeccionSeleccionada: (String) -> Unit,
     onReintentar: () -> Unit,
     modifier: Modifier = Modifier,
+    onAbrirDeletreo: (() -> Unit)? = null,
 ) {
     Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxSize()) {
         when {
@@ -90,6 +94,16 @@ fun CatalogoLeccionesContenido(
                 modifier = Modifier.safeDrawingPadding(),
             ) {
                 item(key = "encabezado") { Encabezado(uiState) }
+                if (onAbrirDeletreo != null) {
+                    item(key = "deletreo") {
+                        FilaDeNavegacion(
+                            titulo = stringResource(R.string.deletreo_titulo),
+                            descripcion = stringResource(R.string.deletreo_descripcion),
+                            onClick = onAbrirDeletreo,
+                            modifier = Modifier.padding(top = Espacio.lg),
+                        )
+                    }
+                }
                 uiState.categorias.forEach { categoria ->
                     item(key = "categoria_${categoria.categoria.name}") {
                         Text(

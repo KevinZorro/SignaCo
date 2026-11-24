@@ -266,19 +266,18 @@ La cámara viene en el siguiente paso.</string>
     <string name="recordatorio_mensaje_4">Aprender señas es constancia. Dedica un momento a tus señas de hoy.</string>
     <string name="recordatorio_mensaje_5">¡Hora de practicar! Entra a SignaCO y refuerza tu abecedario de señas.</string>
 
-    <string name="deletreo_titulo">Deletreo</string>
+    <string name="deletreo_titulo">Deletrear palabras</string>
     <string name="deletreo_permiso">El deletreo necesita la cámara para ver tu mano. Todo se procesa en el dispositivo.</string>
     <string name="deletreo_permitir">Permitir cámara</string>
     <string name="deletreo_error">No se pudo iniciar la cámara o el deletreo.</string>
     <string name="deletreo_pista">Sostén una letra 1 segundo. Mano abierta (el 5) borra; «te quiero» (pulgar, índice y meñique) da espacio. Para repetir una letra, baja la mano un momento.</string>
     <string name="deletreo_gesto_borrar">Borrar</string>
     <string name="deletreo_gesto_espacio">Espacio</string>
-    <string name="deletreo_listo">Listo</string>
+    <string name="deletreo_listo">Terminar palabra</string>
     <string name="deletreo_borrar">Borrar</string>
     <string name="deletreo_sin_coincidencia">Sin coincidencia en la lista</string>
     <string name="deletreo_letras">Letras: %1$s</string>
     <string name="deletreo_ambigua">hay otra palabra parecida</string>
     <string name="cd_vista_previa_deletreo">Vista de la cámara para deletrear con señas</string>
-    <string name="ajustes_deletreo">Deletreo (prueba)</string>
-    <string name="ajustes_deletreo_descripcion">Deletrea palabras con la cámara</string>
+    <string name="deletreo_descripcion">Forma palabras con la cámara, letra por letra</string>
 </resources>
