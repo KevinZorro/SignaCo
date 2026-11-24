@@ -50,7 +50,7 @@ class DeletreoViewModel @Inject constructor(
 
     fun alLlegarFrame(frame: FrameDeLandmarks) {
         val motor = motor ?: return
-        if (!_uiState.value.capturando) return
+        if (!_uiState.value.capturando || _uiState.value.celebrando) return
         if (!frameEnProceso.compareAndSet(false, true)) return
         viewModelScope.launch {
             try {
@@ -62,14 +62,22 @@ class DeletreoViewModel @Inject constructor(
     }
 
     /** "Listo": cierra la palabra sin esperar la pausa. */
-    fun terminarPalabra() {
+    /** "Terminar palabra": cierra la palabra en curso y celebra; al acabar el confeti se limpia. */
+    fun terminarYCelebrar() {
         val motor = motor ?: return
         aplicar(motor.terminar(System.currentTimeMillis()), motor)
+        _uiState.update { it.celebrar() }
+    }
+
+    /** Lo llama la pantalla cuando el confeti terminó: se borra lo deletreado. */
+    fun alTerminarCelebracion() {
+        motor?.reiniciar()
+        _uiState.update { it.limpio() }
     }
 
     fun borrarTodo() {
         motor?.reiniciar()
-        _uiState.update { it.copy(letrasEnCurso = "", palabras = emptyList()) }
+        _uiState.update { it.limpio() }
     }
 
     fun alternarCaptura() {

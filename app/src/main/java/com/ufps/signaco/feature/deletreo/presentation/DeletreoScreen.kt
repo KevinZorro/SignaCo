@@ -12,12 +12,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,6 +52,12 @@ fun DeletreoScreen(
     val descripcionDeLaCamara = stringResource(R.string.cd_vista_previa_deletreo)
     val pista = stringResource(R.string.deletreo_pista)
 
+    val vibracion = LocalHapticFeedback.current
+    LaunchedEffect(estado.celebrando) {
+        // Equivalente háptico del confeti (RNF-09): quien no lo ve lo siente.
+        if (estado.celebrando) vibracion.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -56,6 +68,7 @@ fun DeletreoScreen(
             )
         },
     ) { relleno ->
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -121,8 +134,9 @@ fun DeletreoScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         BotonPrincipal(
                             texto = stringResource(R.string.deletreo_listo),
-                            onClick = viewModel::terminarPalabra,
+                            onClick = viewModel::terminarYCelebrar,
                             modifier = Modifier.weight(1f),
+                            habilitado = estado.puedeTerminar,
                         )
                         BotonTonal(
                             texto = stringResource(R.string.deletreo_borrar),
@@ -132,6 +146,17 @@ fun DeletreoScreen(
                     }
                 }
             }
+        }
+        if (estado.celebrando) {
+            Confeti(alTerminar = viewModel::alTerminarCelebracion)
+            Text(
+                text = stringResource(R.string.deletreo_celebracion),
+                style = MaterialTheme.typography.displaySmall,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         }
     }
 }

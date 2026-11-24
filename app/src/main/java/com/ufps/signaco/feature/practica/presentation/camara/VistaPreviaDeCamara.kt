@@ -58,7 +58,9 @@ fun VistaPreviaDeCamara(
 
     // Un hilo propio para el análisis: si corriera en el principal, la vista previa se trabaría.
     val ejecutor = remember { Executors.newSingleThreadExecutor() }
-    val vistaPrevia = remember { PreviewView(contexto) }
+    // La pantalla no se apaga mientras la cámara está a la vista: práctica, quiz con cámara y deletreo
+    // comparten esta pieza, y quien practica una seña no toca la pantalla durante minutos.
+    val vistaPrevia = remember { PreviewView(contexto).apply { keepScreenOn = true } }
 
     val analizador = remember(registro) {
         runCatching {
