@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ufps.signaco.feature.deletreo.domain.EventoDeDeletreo
 import com.ufps.signaco.feature.deletreo.domain.MotorDeDeletreo
-import com.ufps.signaco.feature.deletreo.domain.ProgresoDeSostenido
 import com.ufps.signaco.feature.deletreo.domain.usecase.CrearMotorDeDeletreoUseCase
 import com.ufps.signaco.feature.deletreo.domain.usecase.ProcesarFrameDeDeletreoUseCase
 import com.ufps.signaco.feature.practica.domain.model.FrameDeLandmarks
@@ -16,25 +15,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-
-/** Una palabra terminada: lo que deletreó el usuario y lo que propone el decodificador. */
-data class PalabraDeletreada(
-    val letras: String,
-    val sugerida: String?,
-    val otras: List<String>,
-    val ambigua: Boolean,
-)
-
-data class DeletreoUiState(
-    val permisoConcedido: Boolean? = null,
-    val cargando: Boolean = true,
-    val error: Boolean = false,
-    val capturando: Boolean = true,
-    val letrasEnCurso: String = "",
-    val palabras: List<PalabraDeletreada> = emptyList(),
-    /** Lo que se sostiene ahora (letra o gesto) y cuánto falta, para el indicador. */
-    val sostenido: ProgresoDeSostenido = ProgresoDeSostenido(null, 0f),
-)
 
 /**
  * Solo traduce eventos del dominio a estado de pantalla: toda la lógica vive en

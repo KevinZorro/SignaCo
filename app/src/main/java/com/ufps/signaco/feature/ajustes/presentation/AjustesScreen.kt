@@ -63,7 +63,6 @@ fun AjustesScreen(
     onVolver: () -> Unit,
     onAbrirTamanoYContraste: () -> Unit,
     modifier: Modifier = Modifier,
-    onAbrirDeletreo: (() -> Unit)? = null,
     viewModel: AjustesViewModel = hiltViewModel(),
 ) {
     val preferencias by viewModel.preferencias.collectAsStateWithLifecycle()
@@ -71,7 +70,6 @@ fun AjustesScreen(
         preferencias = preferencias,
         onVolver = onVolver,
         onAbrirTamanoYContraste = onAbrirTamanoYContraste,
-        onAbrirDeletreo = onAbrirDeletreo,
         onCambiarMano = viewModel::cambiarManoDominante,
         onCambiarVelocidad = viewModel::cambiarVelocidadDeClips,
         onCambiarVibracion = viewModel::cambiarVibracion,
@@ -86,7 +84,6 @@ fun AjustesContenido(
     preferencias: PreferenciasUsuario,
     onVolver: () -> Unit,
     onAbrirTamanoYContraste: () -> Unit,
-    onAbrirDeletreo: (() -> Unit)? = null,
     onCambiarMano: (ManoDominante) -> Unit,
     onCambiarVelocidad: (VelocidadDeClips) -> Unit,
     onCambiarVibracion: (Boolean) -> Unit,
@@ -234,16 +231,6 @@ fun AjustesContenido(
                         descripcion = stringResource(R.string.ajustes_subtitulos_descripcion),
                         activo = preferencias.subtitulosEnClips,
                         onCambio = onCambiarSubtitulos,
-                    )
-                }
-            }
-
-            if (onAbrirDeletreo != null) {
-                GrupoDeAjustes {
-                    FilaDeNavegacion(
-                        titulo = stringResource(R.string.ajustes_deletreo),
-                        descripcion = stringResource(R.string.ajustes_deletreo_descripcion),
-                        onClick = onAbrirDeletreo,
                     )
                 }
             }

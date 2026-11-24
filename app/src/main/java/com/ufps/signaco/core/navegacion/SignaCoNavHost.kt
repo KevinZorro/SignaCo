@@ -51,6 +51,7 @@ fun SignaCoNavHost(
                 onLeccionSeleccionada = { leccionId ->
                     navController.navigate(Rutas.DetalleLeccion(leccionId))
                 },
+                onAbrirDeletreo = { navController.navigate(Rutas.Deletreo) },
             )
         }
 
@@ -77,7 +78,6 @@ fun SignaCoNavHost(
             AjustesScreen(
                 onVolver = { navController.navigateUp() },
                 onAbrirTamanoYContraste = { navController.navigate(Rutas.TamanoYContraste) },
-                onAbrirDeletreo = { navController.navigate(Rutas.Deletreo) },
             )
         }
 
