@@ -1,0 +1,97 @@
+name: Distribuir a Firebase
+
+# Compila el APK y lo sube a Firebase App Distribution. Firebase le manda a cada tester un
+# correo con el enlace de descarga: ese correo es el aviso de que el APK ya está listo.
+#
+# Se dispara a mano (pestaña Actions -> "Distribuir a Firebase" -> Run workflow) y en cada
+# push a master. Guía de configuración: docs/distribucion-firebase.md
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      notas:
+        description: 'Notas de la versión (opcional)'
+        required: false
+
+# Una sola distribución a la vez; si llega otra, espera en vez de cancelar la que sube.
+concurrency:
+  group: distribuir
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  distribuir:
+    name: Compilar y subir el APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar el JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Instalar el SDK de Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # El build "release" firma con la clave de depuración (ver app/build.gradle.kts). Cada
+      # runner genera una distinta, y Android no deja actualizar una app firmada con otra clave:
+      # habría que desinstalarla y se perdería el progreso local. Si existe el secreto, se usa
+      # SIEMPRE la misma clave y las versiones se instalan una encima de otra.
+      - name: Restaurar la clave de firma estable
+        env:
+          KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            mkdir -p ~/.android
+            printf '%s' "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+            echo "Clave de firma restaurada desde el secreto."
+          else
+            echo "::warning::Sin DEBUG_KEYSTORE_BASE64: cada APK queda firmado con una clave distinta y no se podrá instalar encima del anterior."
+          fi
+
+      # La cuenta de servicio queda disponible para el plugin vía GOOGLE_APPLICATION_CREDENTIALS.
+      - name: Autenticar con Google
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      # versionCode (n.º de ejecución + 100, para quedar por encima de las versiones ya instaladas) sube con cada ejecución para que el celular acepte la actualización.
+      - name: Compilar y subir a Firebase
+        env:
+          NOTAS: ${{ github.event.inputs.notas }}
+          TESTERS: ${{ vars.FIREBASE_TESTERS }}
+          COMMIT: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TESTERS" ]; then
+            echo "::error::Falta la variable de repositorio FIREBASE_TESTERS (correos separados por coma)."
+            exit 1
+          fi
+          NOTES="${NOTAS:-Compilación automática #$RUN_NUMBER (commit ${COMMIT:0:7})}"
+          ./gradlew assembleRelease appDistributionUploadRelease \
+            -PciVersionCode="$((RUN_NUMBER + 100))" \
+            --testers="$TESTERS" \
+            --releaseNotes="$NOTES"
+
+      - name: Resumen
+        if: success()
+        run: |
+          {
+            echo "### APK distribuido"
+            echo "Firebase envió el correo con el enlace a los testers."
+            echo "Versión: build #${{ github.run_number }} (commit ${GITHUB_SHA::7})"
+          } >> "$GITHUB_STEP_SUMMARY"
