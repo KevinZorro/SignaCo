@@ -10,6 +10,11 @@ sealed interface FrameDeDeletreo {
 }
 
 sealed interface EventoDeDeletreo {
+    data class LetraBorrada(val tMs: Long, val letra: String) : EventoDeDeletreo
+
+    /** Gesto de borrar sin letras en curso: la pantalla debe quitar su última palabra. */
+    data class BorrarPalabraSolicitado(val tMs: Long) : EventoDeDeletreo
+
     data class LetraConfirmada(val tMs: Long, val letra: String, val confianza: Float) : EventoDeDeletreo
     data class PalabraTerminada(
         val tMs: Long,
@@ -18,12 +23,18 @@ sealed interface EventoDeDeletreo {
     ) : EventoDeDeletreo
 }
 
+/** Qué se está sosteniendo y cuánto falta ([fraccion] de 0 a 1) para el anillo de progreso. */
+data class ProgresoDeSostenido(val etiqueta: String?, val fraccion: Float)
+
 /**
  * Máquina de estados del deletreo con letras estáticas (réplica de lsc70/spelling.py).
  *
  * - Una letra se confirma al sostenerla [ConfiguracionDeDeletreo.sostenerMs].
  * - La MISMA letra otra vez exige soltar ([ConfiguracionDeDeletreo.soltarMs] sin letra): así
  *   L, soltar, L es LL. Una letra DISTINTA no pide soltar. Un parpadeo de otra letra no duplica.
+ * - Los gestos ([Gestos]) usan esta misma máquina: se sostienen y exigen soltar para repetirse,
+ *   pero no son letras: BORRAR quita la última letra y ESPACIO cierra la palabra.
+ * - Los primeros [ConfiguracionDeDeletreo.guardaDeEntradaMs] de una mano que aparece se ignoran.
  * - La palabra termina tras [ConfiguracionDeDeletreo.pausaDePalabraMs] sin letra y se decodifica.
  *
  * Sin reloj propio: el tiempo viene en los frames, así que las pruebas son deterministas.
@@ -32,6 +43,7 @@ sealed interface EventoDeDeletreo {
 class MotorDeDeletreo(
     private val config: ConfiguracionDeDeletreo,
     private val decodificador: DecodificadorDePalabras,
+    private val detectorDeGestos: DetectorDeGestos = DetectorDeGestos(config.gestos),
 ) {
     private val letras = ArrayList<LetraObservada>()
     private var candidata: String? = null
@@ -40,12 +52,36 @@ class MotorDeDeletreo(
     private var sumaConfianza = 0f
     private var bloqueada: String? = null
     private var inicioSinLetra: Long? = null
+    private var manoDesde: Long? = null
+    private var ultimoT = 0L
 
     /** Letras ya confirmadas de la palabra en curso, para mostrarlas en vivo. */
     val letrasActuales: List<String> get() = letras.map { it.letra }
 
-    fun registrar(frame: FrameDeDeletreo): List<EventoDeDeletreo> {
+    /** Para el anillo de progreso: null si no se sostiene nada o ya se confirmó y espera soltar. */
+    val progreso: ProgresoDeSostenido
+        get() {
+            val c = candidata
+            if (inicioSinLetra != null || c == null || c == bloqueada) return ProgresoDeSostenido(null, 0f)
+            return ProgresoDeSostenido(c, ((ultimoT - inicioCandidata).toFloat() / config.sostenerMs).coerceIn(0f, 1f))
+        }
+
+    /** El gesto (borrar o espacio) que forman estos landmarks normalizados, o null. */
+    fun gestoDe(landmarks: FloatArray): String? = detectorDeGestos.detectar(landmarks)
+
+    fun registrar(entrada: FrameDeDeletreo): List<EventoDeDeletreo> {
         val eventos = ArrayList<EventoDeDeletreo>(1)
+        ultimoT = entrada.tMs
+        if (entrada is FrameDeDeletreo.SinMano) {
+            manoDesde = null
+        } else if (manoDesde == null) {
+            manoDesde = entrada.tMs
+        }
+        var frame = entrada
+        val desde = manoDesde
+        if (frame is FrameDeDeletreo.Letra && desde != null && frame.tMs - desde < config.guardaDeEntradaMs) {
+            frame = FrameDeDeletreo.Rechazada(frame.tMs) // la mano aún se está acomodando
+        }
         if (frame is FrameDeDeletreo.Letra) alLlegarLetra(frame, eventos) else alLlegarSinLetra(frame, eventos)
         return eventos
     }
@@ -65,6 +101,7 @@ class MotorDeDeletreo(
         sumaConfianza = 0f
         bloqueada = null
         inicioSinLetra = null
+        manoDesde = null
     }
 
     private fun alLlegarLetra(f: FrameDeDeletreo.Letra, eventos: MutableList<EventoDeDeletreo>) {
@@ -83,10 +120,21 @@ class MotorDeDeletreo(
         val sostenida = f.tMs - inicioCandidata
         if (sostenida >= config.sostenerMs && framesCandidata >= config.minimoDeFrames && f.letra != bloqueada) {
             val confianza = sumaConfianza / framesCandidata
-            letras.add(LetraObservada(f.letra, confianza))
             bloqueada = f.letra
-            eventos.add(EventoDeDeletreo.LetraConfirmada(f.tMs, f.letra, confianza))
-            if (letras.size >= config.maximoDeLetras) terminarPalabra(f.tMs, eventos)
+            when (f.letra) {
+                Gestos.BORRAR ->
+                    if (letras.isNotEmpty()) {
+                        eventos.add(EventoDeDeletreo.LetraBorrada(f.tMs, letras.removeAt(letras.lastIndex).letra))
+                    } else {
+                        eventos.add(EventoDeDeletreo.BorrarPalabraSolicitado(f.tMs))
+                    }
+                Gestos.ESPACIO -> terminarPalabra(f.tMs, eventos)
+                else -> {
+                    letras.add(LetraObservada(f.letra, confianza))
+                    eventos.add(EventoDeDeletreo.LetraConfirmada(f.tMs, f.letra, confianza))
+                    if (letras.size >= config.maximoDeLetras) terminarPalabra(f.tMs, eventos)
+                }
+            }
         }
     }
 

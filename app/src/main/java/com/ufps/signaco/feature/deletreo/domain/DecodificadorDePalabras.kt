@@ -17,7 +17,7 @@ data class ResultadoDeDecodificacion(
 )
 
 /**
- * Distancia de edición ponderada contra la lista cerrada. Insertar o borrar cuesta 1; sustituir
+ * Distancia de edición ponderada contra la lista cerrada. Insertar o borrar cuesta 1 (salvo la primera y la última observada, que cuestan menos); sustituir
  * cuesta la confianza de la letra observada (con un piso), de modo que una letra dudosa se
  * corrige barato y una segura casi nunca. Réplica de lsc70/spelling.py: si una cambia, la otra
  * también, y los casos de prueba son los mismos.
@@ -32,7 +32,7 @@ class DecodificadorDePalabras(
         val limite = config.costoMaximo(observadas.size)
         val puntuadas = ArrayList<Triple<Float, Int, String>>()
         lista.forEachIndexed { prioridad, p ->
-            if (abs(p.unidades.size - observadas.size) > 2) return@forEachIndexed
+            if (abs(p.unidades.size - observadas.size) > 3) return@forEachIndexed
             puntuadas.add(Triple(distancia(observadas, p.unidades), prioridad, p.palabra))
         }
         puntuadas.sortWith(compareBy({ it.first }, { it.second }))
@@ -50,13 +50,14 @@ class DecodificadorDePalabras(
         var previa = FloatArray(m + 1) { it.toFloat() }
         for (i in 1..observadas.size) {
             val actual = FloatArray(m + 1)
-            actual[0] = i.toFloat()
             val o = observadas[i - 1]
             val sustituir = max(config.costoMinimoDeSustitucion, min(1f, o.confianza))
+            val borrar = if (i == 1 || i == observadas.size) config.costoDeBorrarEnElBorde else 1f
+            actual[0] = previa[0] + borrar
             for (j in 1..m) {
                 val igual = o.letra == objetivo[j - 1]
                 actual[j] = min(
-                    min(previa[j] + 1f, actual[j - 1] + 1f),
+                    min(previa[j] + borrar, actual[j - 1] + 1f),
                     previa[j - 1] + if (igual) 0f else sustituir,
                 )
             }
