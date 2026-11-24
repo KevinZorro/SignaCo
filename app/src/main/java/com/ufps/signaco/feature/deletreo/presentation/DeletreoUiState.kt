@@ -21,6 +21,10 @@ data class DeletreoUiState(
     val sostenido: ProgresoDeSostenido = ProgresoDeSostenido(null, 0f),
     /** Mientras dura el confeti de "Terminar palabra" la frase sigue a la vista y no se captura. */
     val celebrando: Boolean = false,
+    /** Ajuste «Reducir animaciones» de la app: sin confeti ni movimiento, solo la tarjeta quieta. */
+    val reducirAnimaciones: Boolean = false,
+    /** Ajuste de retroalimentación háptica de la app. */
+    val retroalimentacionHaptica: Boolean = true,
 ) {
     /** "Terminar palabra" solo hace algo si hay algo escrito y no está celebrando ya. */
     val puedeTerminar: Boolean get() = frase.isNotEmpty() && !celebrando

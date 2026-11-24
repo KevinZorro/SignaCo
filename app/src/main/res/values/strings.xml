@@ -274,7 +274,7 @@ La cámara viene en el siguiente paso.</string>
     <string name="deletreo_gesto_borrar">Borrar</string>
     <string name="deletreo_gesto_espacio">Espacio</string>
     <string name="deletreo_listo">Terminar palabra</string>
-    <string name="deletreo_celebracion">¡Muy bien!</string>
+    <string name="deletreo_celebracion">¡Palabra lista!</string>
     <string name="deletreo_borrar">Borrar</string>
     <string name="deletreo_sin_coincidencia">Sin coincidencia en la lista</string>
     <string name="deletreo_letras">Letras: %1$s</string>

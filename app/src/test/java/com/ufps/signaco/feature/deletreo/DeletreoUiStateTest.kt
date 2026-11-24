@@ -56,4 +56,21 @@ class DeletreoUiStateTest {
         assertEquals(true, s.permisoConcedido)
         assertEquals(false, s.cargando)
     }
+
+    @Test fun `limpiar conserva los ajustes de animacion y vibracion`() {
+        val s = DeletreoUiState(
+            palabras = listOf(palabra("M A M A", "MAMA")),
+            reducirAnimaciones = true,
+            retroalimentacionHaptica = false,
+        ).celebrar().limpio()
+        assertEquals(true, s.reducirAnimaciones)
+        assertEquals(false, s.retroalimentacionHaptica)
+        assertEquals(false, s.celebrando)
+    }
+
+    @Test fun `por defecto hay animacion y vibracion`() {
+        val s = DeletreoUiState()
+        assertEquals(false, s.reducirAnimaciones)
+        assertEquals(true, s.retroalimentacionHaptica)
+    }
 }

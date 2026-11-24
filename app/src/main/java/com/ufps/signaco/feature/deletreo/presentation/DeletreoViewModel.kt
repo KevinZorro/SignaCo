@@ -2,6 +2,7 @@ package com.ufps.signaco.feature.deletreo.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ufps.signaco.core.preferencias.domain.PreferenciasRepository
 import com.ufps.signaco.feature.deletreo.domain.EventoDeDeletreo
 import com.ufps.signaco.feature.deletreo.domain.MotorDeDeletreo
 import com.ufps.signaco.feature.deletreo.domain.usecase.CrearMotorDeDeletreoUseCase
@@ -24,6 +25,7 @@ import javax.inject.Inject
 class DeletreoViewModel @Inject constructor(
     private val crearMotor: CrearMotorDeDeletreoUseCase,
     private val procesarFrame: ProcesarFrameDeDeletreoUseCase,
+    private val preferenciasRepository: PreferenciasRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeletreoUiState())
@@ -33,6 +35,16 @@ class DeletreoViewModel @Inject constructor(
     private val frameEnProceso = AtomicBoolean(false)
 
     init {
+        viewModelScope.launch {
+            preferenciasRepository.observarPreferencias().collect { preferencias ->
+                _uiState.update {
+                    it.copy(
+                        reducirAnimaciones = preferencias.reducirAnimaciones,
+                        retroalimentacionHaptica = preferencias.retroalimentacionHaptica,
+                    )
+                }
+            }
+        }
         viewModelScope.launch {
             runCatching { crearMotor() }
                 .onSuccess { motor = it; _uiState.update { s -> s.copy(cargando = false) } }

@@ -16,16 +16,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
 
 private const val DURACION_MS = 1400
 private const val PIEZAS = 60
+private const val PAUSA_SIN_MOVIMIENTO_MS = 1400L
 
 /**
- * Celebración corta: confeti que cae una vez y termina. Si el usuario desactivó las animaciones
- * del sistema no se dibuja y se avisa de inmediato, para que no se quede esperando.
+ * Confeti que cae una vez y termina. Con [animar] en false, o si el usuario desactivó las animaciones
+ * del sistema, no se dibuja y solo se espera lo mismo que duraría, para que la tarjeta alcance a leerse.
  */
 @Composable
-fun Confeti(alTerminar: () -> Unit, modifier: Modifier = Modifier) {
+fun Confeti(alTerminar: () -> Unit, modifier: Modifier = Modifier, animar: Boolean = true) {
     val contexto = LocalContext.current
     val terminar = rememberUpdatedState(alTerminar)
     val colores = listOf(
@@ -40,10 +42,16 @@ fun Confeti(alTerminar: () -> Unit, modifier: Modifier = Modifier) {
 
     LaunchedEffect(Unit) {
         val escala = Settings.Global.getFloat(contexto.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-        if (escala > 0f) progreso.animateTo(1f, tween(DURACION_MS, easing = LinearOutSlowInEasing))
+        if (animar && escala > 0f) {
+            progreso.animateTo(1f, tween(DURACION_MS, easing = LinearOutSlowInEasing))
+        } else {
+            // Sin movimiento: la tarjeta se queda quieta el mismo rato para que se alcance a leer.
+            delay(PAUSA_SIN_MOVIMIENTO_MS)
+        }
         terminar.value()
     }
 
+    if (!animar) return
     Canvas(modifier = modifier.fillMaxSize()) {
         val t = progreso.value
         piezas.forEach { p ->

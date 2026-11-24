@@ -14,16 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,7 +52,7 @@ fun DeletreoScreen(
     val vibracion = LocalHapticFeedback.current
     LaunchedEffect(estado.celebrando) {
         // Equivalente háptico del confeti (RNF-09): quien no lo ve lo siente.
-        if (estado.celebrando) vibracion.performHapticFeedback(HapticFeedbackType.LongPress)
+        if (estado.celebrando && estado.retroalimentacionHaptica) vibracion.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
     Scaffold(
@@ -147,16 +144,14 @@ fun DeletreoScreen(
                 }
             }
         }
-        if (estado.celebrando) {
-            Confeti(alTerminar = viewModel::alTerminarCelebracion)
-            Text(
-                text = stringResource(R.string.deletreo_celebracion),
-                style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .semantics { liveRegion = LiveRegionMode.Polite },
-            )
-        }
+        CapaDeCelebracion(
+            visible = estado.celebrando,
+            frase = estado.frase,
+            reducirAnimaciones = estado.reducirAnimaciones,
+            intermedio = {
+                Confeti(alTerminar = viewModel::alTerminarCelebracion, animar = !estado.reducirAnimaciones)
+            },
+        )
         }
     }
 }
